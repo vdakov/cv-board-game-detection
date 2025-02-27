@@ -1,0 +1,7 @@
+selenium 
+pandas
+numpy
+torch
+torchvision
+matplotlib 
+opencv-python
