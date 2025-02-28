@@ -5,3 +5,9 @@ torch
 torchvision
 matplotlib 
 opencv-python
+torchaudio
+pycocotools 
+onnxruntime 
+onnx
+git+https://github.com/facebookresearch/segment-anything.git
+scikit-learn

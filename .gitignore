@@ -170,4 +170,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-catan_data/mined_synthetic_images/
+catan_data/mined_synthetic_boards/
+catan_data/mined_synthetic_tiles/
+myenv/
