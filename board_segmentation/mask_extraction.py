@@ -6,6 +6,7 @@ import os
 import cv2 
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
+import pickle
 
 def cluster_masks(anns, min_samples=3, eps=0.5):
     features = np.array([ann['area'] for ann in anns]).reshape(-1, 1)
@@ -20,13 +21,12 @@ def cluster_masks(anns, min_samples=3, eps=0.5):
 
     return anns
 
-
-
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sam_checkpoint_path", help="Echo the path to the SAM checkpoint here.", type=str, default="sam_checkpoint/sam_vit_h_4b8939.pth")
     parser.add_argument("--board_directory", help="Echo the path to the directory with the board images", type=str, default="../catan_data/mined_synthetic_boards_sample/")
     parser.add_argument("--save_dir", help="Echo the path to the directory where you want your hexagons saved", type=str, default="../catan_data/mined_synthetic_tiles_sample/")
+    parser.add_argument("--sam_finetune_save_dir", help="Echo the path to the directory where you want the SAM finetuning data saved", type=str, default="../catan_data/sam_finetuning_input_data/")
     args = parser.parse_args()
     return args
 
@@ -60,7 +60,6 @@ def show_anns(original, anns, cluster=False):
                 m = ann['segmentation']
                 cluster_img[m, :] = cluster_colors[cluster_label]
 
-
     ax[0].imshow(original)
     ax[1].imshow(img)
     ax[2].imshow(cluster_img)
@@ -69,32 +68,52 @@ def show_anns(original, anns, cluster=False):
 
     return cluster_img
 
+def save_to_file(object, filename):
+    finetune_path = args.sam_finetune_save_dir
+    with open(f'{finetune_path}/image_{i}_outputs/{filename}', 'wb') as f:
+        pickle.dump(object, f)
+    return masks
+
 if __name__ == "__main__":
     args = get_args()
     im_folder = args.board_directory
     sam_checkpoint = sam_model_registry["vit_h"](checkpoint=args.sam_checkpoint_path)
     mask_generator = SamAutomaticMaskGenerator(sam_checkpoint)
-    for i in range(1):
+    for i in range(11):
         image_path = f"{im_folder}/canvas_image_{i}.png"
         img = cv2.imread(image_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)    
         img = cv2.GaussianBlur(img, (5, 5), 0)
-        
 
         masks = mask_generator.generate(img)
-        
+
+        finetune_path = args.sam_finetune_save_dir
+        save_dir = f"{finetune_path}/image_{i}_outputs"  # Change this to your desired directory
+        os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
+
         cluster_img = show_anns(img, masks, cluster=True)
         cluster_img = (cluster_img * 255).astype(np.uint8)
         cluster_img = cv2.cvtColor(cluster_img, cv2.COLOR_RGB2GRAY)
 
         contours, _ = cv2.findContours(cluster_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
+        height, width = (cluster_img.shape[1], cluster_img.shape[0])
+
+        gt_masks = []
         hexagons = []
         for contour in contours:
             approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
 
             if len(approx) == 6:  # Hexagon has six sides
                 hexagons.append(approx)
+
+                mask = np.zeros((height, width), dtype=np.uint8)
+                cv2.drawContours(mask, [approx], -1, thickness=cv2.FILLED, color=(0, 255, 0))
+                gt_masks.append((mask > 0).astype(np.float32))
+
+        gt_masks = np.array(gt_masks)
+
+        save_to_file(gt_masks, 'ground_truth_masks.pkl')
 
         # Draw detected hexagons
         result = img.copy()
@@ -108,17 +127,15 @@ if __name__ == "__main__":
         plt.axis("off")
         plt.show()
 
-        save_dir = "hexagon_outputs"  # Change this to your desired directory
-        os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
+        bounding_boxes_dict = {}
 
         for idx, hexagon in enumerate(hexagons):
             x, y, w, h = cv2.boundingRect(hexagon)  # Get bounding box
             hex_crop = img[y:y+h, x:x+w]  # Crop the region
 
-            save_path = os.path.join(args.save_dir, f"hexagon_{idx}.png")
-            cv2.imwrite(save_path, cv2.cvtColor(hex_crop, cv2.COLOR_RGB2BGR))  # Save the hexagon
-            
+            bounding_boxes_dict[idx] = [x, y, x + w, y + h]
 
+            save_path = os.path.join(save_dir, f"img_{i}_hexagon_{idx}.png")
+            cv2.imwrite(save_path, cv2.cvtColor(hex_crop, cv2.COLOR_RGB2BGR)) # Save the hexagon
 
-
-   
+        save_to_file(bounding_boxes_dict, f'bounding_boxes.pkl')
