@@ -76,6 +76,7 @@ if __name__ == "__main__":
     input_img_shapes = []
     ground_truth_mask_list = []
 
+    # Calculate and store all image embeddings to speed up compute time
     for i in range(11):
         image_path = f"{im_folder}/canvas_image_{i}.png"
         input_image = cv2.imread(image_path, flags=cv2.COLOR_BGR2RGB)
@@ -94,14 +95,16 @@ if __name__ == "__main__":
             image_embedding = sam_model.image_encoder(input_image)  # input image
             image_emb_tensors.append(image_embedding)
 
+
         bounding_boxes = get_object_from_file(f'{args.sam_finetune_save_dir}/image_{i}_outputs/bounding_boxes.pkl')
         bounding_boxes = get_bounding_boxes(bounding_boxes)
         bounding_boxes_tensors.append(bounding_boxes)
 
-    # for each image in the finetuning dataset
+
     for epoch in range(num_epochs):
         print(f"Reached epoch {epoch}/{num_epochs - 1}")
 
+        # Batched optimization for 11 images
         for i in range(11):
             print(f"Reached image {i}/10")
             # optimize for a given number of epochs
@@ -124,13 +127,9 @@ if __name__ == "__main__":
 
             upscaled_masks = sam_model.postprocess_masks(low_res_masks, image_emb_tensors[i].shape, input_img_shapes[i]).squeeze(0).to(device)
 
-            binary_mask = normalize(upscaled_masks).to(device)
+            binary_mask = normalize(threshold(upscaled_masks, 0.0, 0))
 
-            gt_mask_resized = normalize(torch.from_numpy(ground_truth_mask_list[i])).to(device)
-
-            # gt_binary_mask = torch.as_tensor(gt_mask_resized > 0, dtype=torch.float32)
-
-            # plot_masks(gt_binary_mask, binary_mask)
+            gt_mask_resized = torch.as_tensor(ground_truth_mask_list[i] > 0, dtype=torch.float32).to(device)
 
             loss = loss_fn(binary_mask, gt_mask_resized)
 

@@ -107,9 +107,9 @@ if __name__ == "__main__":
             if len(approx) == 6:  # Hexagon has six sides
                 hexagons.append(approx)
 
-                mask = np.zeros((height, width), dtype=np.uint8)
-                cv2.drawContours(mask, [approx], -1, thickness=cv2.FILLED, color=(0, 255, 0))
-                gt_masks.append((mask > 0).astype(np.float32))
+                mask = np.zeros((width, height), dtype=np.uint8)
+                cv2.drawContours(mask, [approx], -1, 255, thickness=cv2.FILLED)
+                gt_masks.append(mask.astype(np.float32))
 
         gt_masks = np.array(gt_masks)
 
