@@ -11,3 +11,4 @@ onnxruntime
 onnx
 git+https://github.com/facebookresearch/segment-anything.git
 scikit-learn
+ultralytics

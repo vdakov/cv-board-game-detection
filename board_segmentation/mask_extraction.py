@@ -7,6 +7,7 @@ import cv2
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 
+
 def cluster_masks(anns, min_samples=3, eps=0.5):
     features = np.array([ann['area'] for ann in anns]).reshape(-1, 1)
 
@@ -21,10 +22,10 @@ def cluster_masks(anns, min_samples=3, eps=0.5):
     return anns
 
 
-
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sam_checkpoint_path", help="Echo the path to the SAM checkpoint here.", type=str, default="sam_checkpoint/sam_vit_h_4b8939.pth")
+    parser.add_argument("--model_name", help="Echo the name of the model you want to use", type=str, default="vit_h")
     parser.add_argument("--board_directory", help="Echo the path to the directory with the board images", type=str, default="../catan_data/mined_synthetic_boards_sample/")
     parser.add_argument("--save_dir", help="Echo the path to the directory where you want your hexagons saved", type=str, default="../catan_data/mined_synthetic_tiles_sample/")
     args = parser.parse_args()

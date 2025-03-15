@@ -4,6 +4,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from PIL import Image
+from io import BytesIO
+from pre_processing.background_blend import blend_with_random_background
 
 # === Configuration ===
 website_url = "https://jkirschner.github.io/catan-randomizer/"
@@ -43,11 +46,23 @@ try:
         
         # Decode the base64 image data
         image_data = base64.b64decode(encoded)
-        
-        # Save the image with a unique filename for each iteration
-        download_path = f"../catan_data/mined_synthetic_images/canvas_image_{i}.png"
-        with open(download_path, "wb") as file:
-            file.write(image_data)
+          
+        main_image = Image.open(BytesIO(image_data)).convert("RGBA")
+        background_size = (2000, 2000)
+        background = Image.new("RGBA", background_size, (0, 0, 0, 0))  # Transparent background
+
+        # Get the size of the main image
+        main_image_size = main_image.size
+
+        # Calculate the position to paste the image (centered)
+        x_offset = (background_size[0] - main_image_size[0]) // 2
+        y_offset = (background_size[1] - main_image_size[1]) // 2
+
+        # Paste the main image onto the background
+        background.paste(main_image, (x_offset, y_offset), main_image)
+        blended_image = blend_with_random_background(background, "data/full/synthetic_table_images")
+        download_path = f"data/full/mined_synthetic_boards/canvas_image_{i}.png"
+        blended_image.save(download_path)
         
         print(f"Canvas image {i} downloaded successfully and saved as '{download_path}'.")
         
