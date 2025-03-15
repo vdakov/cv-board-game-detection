@@ -159,4 +159,4 @@ if __name__ == "__main__":
 
     print(f'Generated masks for image at path {image_path}')
 
-    plot_multiple_masks(orig_image, binary_mask.detach().squeeze(0))
+    plot_multiple_masks(orig_image, binary_masks.detach().squeeze(0))
