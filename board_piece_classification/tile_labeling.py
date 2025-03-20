@@ -4,6 +4,26 @@ import torch
 from torchvision.transforms import ToTensor
 from torch.nn.functional import interpolate
 import pandas as pd
+import pickle
+import tensorflow as tf
+from sklearn.preprocessing import LabelEncoder
+
+
+def to_tf_dataset(ds_dict, output_path):
+    input = [x.numpy() for x in ds_dict['img_tensor']]
+    labels = ds_dict['img_label']
+
+    # Convert labels (string categories) to integer labels
+    label_encoder = LabelEncoder()
+    y_encoded = label_encoder.fit_transform(labels)
+
+    # Convert to TensorFlow tensors
+    X_tensorflow = tf.convert_to_tensor(input, dtype=tf.float32)
+    y_tensorflow = tf.convert_to_tensor(y_encoded, dtype=tf.int32)
+
+    with open(f'{output_path}/labeled_synthetic_samples.pkl', 'wb') as f:
+        pickle.dump((X_tensorflow.numpy(), y_tensorflow.numpy(), label_encoder), f)
+
 
 def get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_path, resize_shape):
 
@@ -61,11 +81,13 @@ def get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_pa
                 final_class = cls
 
         final_dict['img_path'].append(img_path)
-        final_dict['img_tensor'].append(img_np)
+        final_dict['img_tensor'].append(resized_img.permute(1, 2, 0))
         final_dict['img_label'].append(final_class)
 
     df = pd.DataFrame.from_dict(final_dict)
-    df.to_csv(f'{output_path}/labeled_synthetic_samples.csv')
+    df.to_csv(f'{output_path}/labeled_synthetic_samples.csv', index=False)
+
+    return final_dict
 
 
 if __name__ == "__main__":
@@ -77,4 +99,5 @@ if __name__ == "__main__":
     resize_shape = (135, 121)
 
     # Get masked hexagons
-    get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_path, resize_shape)
+    final_dict = get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_path, resize_shape)
+    to_tf_dataset(final_dict, output_path, 3)
