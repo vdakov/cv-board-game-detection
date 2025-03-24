@@ -118,7 +118,7 @@ if __name__ == "__main__":
     epochs = 100 # the maximum number of epochs used to train the model
     validation_split = 0.2
     test_split = 0.1
-    train_set_path = '../data/full/compiled_dataset/labeled_synthetic_samples.pkl'
+    train_set_path = '../data/full/compiled_dataset/mined_synthetic_samples.pkl'
     path_to_predict = '../data/sample/test.jpg'
     model_save_path = '../board_piece_classification/model/tile_detector.keras'
 
