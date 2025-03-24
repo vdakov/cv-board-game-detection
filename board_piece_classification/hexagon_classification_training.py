@@ -1,5 +1,5 @@
 import keras
-from keras import layers
+from keras import layers, models, callbacks
 import matplotlib.pyplot as plt
 import torch
 import ast
@@ -7,16 +7,24 @@ import pickle
 import tensorflow as tf
 from PIL import Image
 import numpy as np
+from tensorflow.python.keras.layers import MaxPool2D
 from torchvision.transforms import ToTensor
 
 
 def plot_hist(hist):
-    plt.plot(hist.history["accuracy"])
-    # plt.plot(hist.history["val_accuracy"])
-    plt.title("model accuracy")
-    plt.ylabel("accuracy")
-    plt.xlabel("epoch")
-    plt.legend(["train"], loc="upper left")
+    fig, axes = plt.subplots(1, 2)
+
+    axes[0].plot(hist.history["accuracy"])
+    axes[0].set_title(f"Training accuracy for model: ")
+    axes[0].set_ylabel("Accuracy")
+    axes[0].set_xlabel("Epoch")
+
+    axes[1].plot(hist.history["loss"])
+    axes[1].set_title(f"Training loss for model: ")
+    axes[1].set_ylabel("Loss")
+    axes[1].set_xlabel("Epoch")
+
+    plt.tight_layout()
     plt.show()
 
 def to_tensor(tensor_str):
@@ -45,33 +53,49 @@ def model_predict(model, sample, label_encoder, img_size):
     print(f'Image at path: {sample} is a {pred_label} tile')
 
 def model_training(model, X, y, epochs):
-    model.fit(x=X, y=y, epochs=epochs)
-    # plot_hist(hist)
+    # Stop when the loss does not improve significantly over 3 epochs
+    callback = callbacks.EarlyStopping(monitor='loss', min_delta=0.01, patience=3)
+
+    # Fit the model to the training data
+    hist = model.fit(x=X, y=y, epochs=epochs, callbacks=[callback])
+
+    # Plot training loss and accuracy
+    plot_hist(hist)
+
     return model
 
-def build_model():
-    inputs = layers.Input(shape=IMG_SIZE)
-    built_model = keras.applications.EfficientNetB0(include_top=False, input_tensor=inputs, weights="imagenet")
+def data_augmentation():
+    # Data augmentation component
+    return keras.Sequential([
+        layers.RandomFlip("horizontal"),
+        layers.RandomFlip("vertical"),
+        layers.RandomRotation(0.2),
+        layers.RandomZoom(0.1),
+        layers.RandomContrast(0.2),
+    ])
 
-    # Freeze the pretrained weights
-    built_model.trainable = False
+def build_cnn():
+    # Augment the training data
+    augmentation = data_augmentation()
 
-    # Rebuild top
-    x = layers.GlobalAveragePooling2D(name="avg_pool")(built_model.output)
-    x = layers.BatchNormalization()(x)
+    # Define CNN model
+    model = models.Sequential([
+        layers.Input(shape=IMG_SIZE),
+        augmentation,
+        layers.Conv2D(25, kernel_size=(3,3), strides=(1,1), padding='valid', activation='relu', input_shape=IMG_SIZE),
+        layers.MaxPool2D(pool_size=(1,1), padding='valid'),
+        layers.Flatten(),
+        layers.Dense(100, activation='relu'),
+        layers.Dense(NUM_CLASSES, activation='softmax')
+    ])
 
-    top_dropout_rate = 0.2
-    x = layers.Dropout(top_dropout_rate, name="top_dropout")(x)
-    outputs = layers.Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
+    # Define optimizer
+    optimizer = keras.optimizers.Adam(learning_rate=5e-5, use_ema=True)
 
-    # Compile
-    built_model = keras.Model(inputs, outputs, name="EfficientNet")
-    optimizer = keras.optimizers.Adam(learning_rate=1e-2)
-    built_model.compile(
-        optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"]
-    )
+    # Compile the model
+    model.compile(loss='sparse_categorical_crossentropy', metrics=['accuracy'], optimizer=optimizer)
 
-    return built_model
+    return model
 
 if __name__ == "__main__":
 
@@ -81,9 +105,10 @@ if __name__ == "__main__":
     IMG_SIZE = (135, 121, 3)
     BATCH_SIZE = 64
     NUM_CLASSES = 6  # there are six tile types in Catan
-    epochs = 50 # the number of epochs used to train the model
+    epochs = 100 # the number of epochs used to train the model
     dataset_path = '../data/sample/labeled_synthetic_samples.pkl'
-    path_to_predict = '../data/sample/test.jpg'
+    path_to_predict = '../data/sample/test2.png'
+    model_save_path = '../data/sample/tile_detector.keras'
 
     ##### DATASET PRE-PROCESSING #####
 
@@ -97,11 +122,14 @@ if __name__ == "__main__":
     ##### TRAINING THE MODEL #####
 
     # First build the model
-    model = build_model()
+    model = build_cnn()
 
     # Then train it on our input data
     # This will also plot the train and validation accuracies
     model = model_training(model, X_tensorflow, y_tensorflow, epochs)
+
+    model.save(model_save_path)
+    print(f'Trained model saved at: {model_save_path}')
 
     ##### TESTING THE MODEL #####
 

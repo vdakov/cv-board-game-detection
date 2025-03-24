@@ -57,7 +57,10 @@ def get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_pa
         ref_dict[cls] = masked_ref
 
     # Label images
-    for i in range(19):
+    for i in range(1002):
+        if i == 955:
+            continue
+
         img_path = f'{tile_img_folder}/hexagon_{i}.png'
 
         img = Image.open(img_path)
@@ -84,6 +87,9 @@ def get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_pa
         final_dict['img_tensor'].append(resized_img.permute(1, 2, 0))
         final_dict['img_label'].append(final_class)
 
+        if i % 50 == 0:
+            print(f'Reached image: {i}/{1002}')
+
     df = pd.DataFrame.from_dict(final_dict)
     df.to_csv(f'{output_path}/labeled_synthetic_samples.csv', index=False)
 
@@ -92,7 +98,7 @@ def get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_pa
 
 if __name__ == "__main__":
 
-    tile_img_folder = '../data/sample/mined_synthetic_tiles_sample'
+    tile_img_folder = '../data/full/mined_synthetic_tiles'
     mask_folder = '../data/tile_masks'
     ref_img_folder = '../data/sample/synthetic_reference_tiles'
     output_path = '../data/sample'
@@ -100,4 +106,4 @@ if __name__ == "__main__":
 
     # Get masked hexagons
     final_dict = get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_path, resize_shape)
-    to_tf_dataset(final_dict, output_path, 3)
+    to_tf_dataset(final_dict, output_path)
