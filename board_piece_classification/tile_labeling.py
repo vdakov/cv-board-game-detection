@@ -33,7 +33,7 @@ def get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_pa
     mask = Image.open(f'{mask_folder}/hexagon_mask.jpg')
     mask_np = transform(mask)
 
-    image_classes = ['clay', 'default', 'sheep', 'stone', 'wheat', 'wood']
+    image_classes = ['brick', 'desert', 'sheep', 'ore', 'wheat', 'lumber']
     # Dictionary that stores the reference images
     ref_dict = {}
     # Dictionary that stores for each label all images fitting this label
