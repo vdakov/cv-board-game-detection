@@ -1,29 +1,29 @@
 from PIL import Image, ImageDraw, ImageFont
 from torchvision.transforms import ToTensor
 from torch.nn.functional import interpolate
-import pickle
 import tensorflow as tf
-from sklearn.preprocessing import LabelEncoder
+import pickle
+import os
 
 def to_tf_dataset(ds_dict, output_path):
     input = [x.numpy() for x in ds_dict['img_tensor']]
     labels = ds_dict['img_label']
 
-    # Convert labels (string categories) to integer labels
-    label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit_transform(labels)
+    # Convert labels (string categories) with premade label encoder
+    with open('../data/full/compiled_dataset/label_encoder/label_encoder.pkl', 'rb') as f:
+        label_encoder = pickle.load(f)
+    y_encoded = label_encoder.transform(labels)
 
     # Convert to TensorFlow tensors
     X_tensorflow = tf.convert_to_tensor(input, dtype=tf.float32)
     y_tensorflow = tf.convert_to_tensor(y_encoded, dtype=tf.int32)
 
     with open(f'{output_path}/generated_synthetic_samples.pkl', 'wb') as f:
-        pickle.dump((X_tensorflow.numpy(), y_tensorflow.numpy(), label_encoder), f)
+        pickle.dump((X_tensorflow.numpy(), y_tensorflow.numpy()), f)
 
-def generate_tile_image(bg_path, number=None, font=None, tile_type='desert'):
+def generate_tile_image(image_path, bg_path, number=None, font=None, tile_type='desert'):
     # Load the background image
-    image_path = bg_path  # Replace with your image path
-    img = Image.open(image_path).convert('RGB')
+    img = Image.open(image_path).convert('RGBA')
 
     # Get image size
     width, height = img.size
@@ -33,7 +33,11 @@ def generate_tile_image(bg_path, number=None, font=None, tile_type='desert'):
 
     # Desert tiles do not have a number on them
     if tile_type == 'desert':
-        return img
+        bg = Image.open(bg_path).convert('RGBA')
+        bg = bg.resize(img.size)
+        combined = Image.alpha_composite(bg, img).convert('RGB')
+
+        return combined
 
     # Define circle properties
     circle_radius = min(width, height) // 6  # Adjust size
@@ -73,7 +77,11 @@ def generate_tile_image(bg_path, number=None, font=None, tile_type='desert'):
 
     draw.text(text_position, number_text, font=font, fill=fill_color)
 
-    return img
+    bg = Image.open(bg_path).convert('RGBA')
+    bg = bg.resize(img.size)
+    combined = Image.alpha_composite(bg, img).convert('RGB')
+
+    return combined
 
 def img_to_tensor(img, img_size):
     transform = ToTensor()
@@ -91,11 +99,13 @@ if __name__ == '__main__':
     tile_bgs_path = '../data/tile_datasets/hexagons'
     output_img_path = '../data/full/generated_synthetic_tiles'
     output_ds_path = '../data/full/compiled_dataset'
+    backgrounds_path = '../data/tile_datasets/tile_backgrounds'
 
-    tile_types = ['brick', 'desert', 'lumber', 'ore', 'sheep', 'wheat']
+    tile_types = ['brick', 'desert', 'sheep', 'ore', 'wheat', 'lumber']
     valid_numbers = ['2', '3', '4', '5', '6', '8', '9', '10', '11', '12']
+    backgrounds = os.listdir(backgrounds_path)
 
-    img_size = (135, 121)
+    img_size = (243, 256)
 
     final_dict = {
         'img_path': [],
@@ -103,31 +113,32 @@ if __name__ == '__main__':
         'img_label': []
     }
 
-    for tile in tile_types:
-        img_path = f'{tile_bgs_path}/{tile}.png'
+    bg_index = 0
+    for background in backgrounds:
 
-        if tile != 'desert':
+        bg_path = f'{backgrounds_path}/{background}'
+
+        print(f'Reached background image {bg_index} of {len(backgrounds)}')
+
+        for tile in tile_types:
+            img_path = f'{tile_bgs_path}/{tile}.png'
+
             for number in valid_numbers:
                 # Generate image
-                img = generate_tile_image(img_path, number, font, tile)
+                img = generate_tile_image(img_path, bg_path, number, font, tile)
 
                 # Save image
-                img.save(f'{output_img_path}/{tile}_{number}.png')
+                img.save(f'{output_img_path}/bg_{bg_index}_{tile}_{number}.png')
 
                 # Save relevant information to dictionary
                 final_dict['img_path'].append(img_path)
                 final_dict['img_tensor'].append(img_to_tensor(img, img_size))
                 final_dict['img_label'].append(tile)
-        else:
-            # Generate image
-            img = generate_tile_image(img_path, font=font, tile_type=tile)
 
-            # Save image
-            img.save(f'{output_img_path}/{tile}.png')
+        bg_index += 1
 
-            # Save relevant information to dictionary
-            final_dict['img_path'].append(img_path)
-            final_dict['img_tensor'].append(img_to_tensor(img, img_size))
-            final_dict['img_label'].append(tile)
+    print('Synthetic samples obtained')
 
     to_tf_dataset(final_dict, output_ds_path)
+
+    print('Synthetic samples saved to pickle dataset')

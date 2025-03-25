@@ -8,6 +8,7 @@ import tensorflow as tf
 from PIL import Image
 import numpy as np
 from torchvision.transforms import ToTensor
+import os
 
 def plot_hist(hist):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
@@ -85,6 +86,61 @@ def data_augmentation():
         layers.RandomContrast(0.2),
     ])
 
+def build_dataset(datasets_folder, valid_split, test_split):
+    datasets = [f for f in os.listdir(datasets_folder) if os.path.isfile(os.path.join(datasets_folder, f))]
+
+    X_train = []
+    y_train = []
+
+    X_valid = []
+    y_valid = []
+
+    X_test = []
+    y_test = []
+
+    for dataset in datasets:
+        dataset_path = f'{datasets_folder}/{dataset}'
+
+        print(f'Compiling dataset at path: {dataset_path}')
+
+        with open(dataset_path, 'rb') as f:
+            (X, y) = pickle.load(f)
+
+        X = tf.convert_to_tensor(X, dtype=tf.float32)
+        y = tf.convert_to_tensor(y, dtype=tf.int32)
+
+        print(X.shape)
+
+        indices = np.arange(X.shape[0])
+        np.random.shuffle(indices)
+
+        valid_size = int(valid_split * len(X))
+        test_size = int(test_split * len(X))
+        train_size = len(X) - valid_size - test_size
+
+        final_indices = [indices[:train_size], indices[train_size:train_size + valid_size], indices[train_size + valid_size:]]
+
+        X_train.append(tf.gather(X, final_indices[0]))
+        y_train.append(tf.gather(y, final_indices[0]))
+
+        X_valid.append(tf.gather(X, final_indices[1]))
+        y_valid.append(tf.gather(y, final_indices[1]))
+
+        X_test.append(tf.gather(X, final_indices[2]))
+        y_test.append(tf.gather(y, final_indices[2]))
+
+    X_train = tf.concat(X_train, axis=0)
+    y_train = tf.concat(y_train, axis=0)
+
+    X_valid = tf.concat(X_valid, axis=0)
+    y_valid = tf.concat(y_valid, axis=0)
+
+    X_test = tf.concat(X_test, axis=0)
+    y_test = tf.concat(y_test, axis=0)
+
+    return [(X_train, y_train), (X_valid, y_valid), (X_test, y_test)]
+
+
 def build_cnn():
     # Augment the training data
     augmentation = data_augmentation()
@@ -110,37 +166,34 @@ def build_cnn():
 
 if __name__ == "__main__":
 
+    # Fix error where multiple libiomp5md.dll files are present
+    os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
     ##### PARAMETER DEFINITION #####
 
-    IMG_SIZE = (135, 121, 3)
-    BATCH_SIZE = 64
+    #Downsample all images by a factor of 2
+    IMG_SIZE = (243, 256, 3)
+    BATCH_SIZE = 32
     NUM_CLASSES = 6  # there are six tile types in Catan
     epochs = 100 # the maximum number of epochs used to train the model
     validation_split = 0.2
     test_split = 0.1
-    train_set_path = '../data/full/compiled_dataset/mined_synthetic_samples.pkl'
     path_to_predict = '../data/sample/test.jpg'
     model_save_path = '../board_piece_classification/model/tile_detector.keras'
+    datasets_folder = '../data/full/compiled_dataset'
 
     ##### DATASET PRE-PROCESSING #####
 
-    with open(train_set_path, 'rb') as f:
-        X, y, label_encoder = pickle.load(f)
+    final_sets = build_dataset(datasets_folder, validation_split, test_split)
 
-    # Convert to TensorFlow tensors
-    X = tf.convert_to_tensor(X, dtype=tf.float32)
-    y = tf.convert_to_tensor(y, dtype=tf.int32)
+    X_train, y_train = final_sets[0]
+    train_set = tf.data.Dataset.from_tensor_slices((X_train, y_train))
 
-    dataset = tf.data.Dataset.from_tensor_slices((X, y))
-    dataset = dataset.shuffle(buffer_size=len(X))
+    X_valid, y_valid = final_sets[1]
+    validation_set = tf.data.Dataset.from_tensor_slices((X_valid, y_valid))
 
-    test_size = int(test_split * len(X))
-    validation_size = int(validation_split * len(X))
-    train_size = len(X) - test_size - validation_size
-
-    train_set = dataset.take(train_size)
-    validation_set = dataset.skip(validation_size)
-    test_set = dataset.skip(test_size)
+    X_test, y_test = final_sets[2]
+    test_set = tf.data.Dataset.from_tensor_slices((X_test, y_test))
 
     ##### TRAINING THE MODEL #####
 
@@ -158,6 +211,9 @@ if __name__ == "__main__":
 
     # Test the model on the test set
     model_eval(model, test_set)
+
+    with open(f'{datasets_folder}/label_encoder/label_encoder.pkl', 'rb') as f:
+        label_encoder = pickle.load(f)
 
     # Predict a single sample that is different from the test set
     model_predict(model, path_to_predict, label_encoder, IMG_SIZE)

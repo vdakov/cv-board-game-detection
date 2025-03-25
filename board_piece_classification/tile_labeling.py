@@ -8,21 +8,26 @@ import pickle
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 
-
 def to_tf_dataset(ds_dict, output_path):
     input = [x.numpy() for x in ds_dict['img_tensor']]
     labels = ds_dict['img_label']
 
     # Convert labels (string categories) to integer labels
     label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit_transform(labels)
+    label_encoder = label_encoder.fit(labels)
+
+    # Save the employed label encoder to file
+    with open(f'{output_path}/label_encoder/label_encoder.pkl', 'wb') as f:
+        pickle.dump(label_encoder, f)
+
+    y_encoded = label_encoder.transform(labels)
 
     # Convert to TensorFlow tensors
     X_tensorflow = tf.convert_to_tensor(input, dtype=tf.float32)
     y_tensorflow = tf.convert_to_tensor(y_encoded, dtype=tf.int32)
 
-    with open(f'{output_path}/labeled_synthetic_samples.pkl', 'wb') as f:
-        pickle.dump((X_tensorflow.numpy(), y_tensorflow.numpy(), label_encoder), f)
+    with open(f'{output_path}/mined_synthetic_samples.pkl', 'wb') as f:
+        pickle.dump((X_tensorflow.numpy(), y_tensorflow.numpy()), f)
 
 
 def get_labeled_hexagons(tile_img_folder, mask_folder, ref_img_folder, output_path, resize_shape):
@@ -101,7 +106,7 @@ if __name__ == "__main__":
     tile_img_folder = '../data/full/mined_synthetic_tiles'
     mask_folder = '../data/tile_masks'
     ref_img_folder = '../data/sample/synthetic_reference_tiles'
-    output_path = '../data/sample'
+    output_path = '../data/full/compiled_dataset'
     resize_shape = (135, 121)
 
     # Get masked hexagons
