@@ -62,7 +62,7 @@ def model_predict(model, sample, label_encoder, img_size):
 
 def model_training(model, train_set, valid_set, epochs):
     # Stop when the loss does not improve significantly over 3 epochs
-    callback = callbacks.EarlyStopping(monitor='loss', min_delta=0.01, patience=3)
+    callback = callbacks.EarlyStopping(monitor='loss', min_delta=0.01, patience=4)
 
     # Keras expects a batched dataset
     batched_train = train_set.batch(BATCH_SIZE)
@@ -86,57 +86,33 @@ def data_augmentation():
         layers.RandomContrast(0.2),
     ])
 
-def build_dataset(datasets_folder, valid_split, test_split):
-    datasets = [f for f in os.listdir(datasets_folder) if os.path.isfile(os.path.join(datasets_folder, f))]
+def build_dataset(dataset_path, valid_split, test_split):
 
-    X_train = []
-    y_train = []
+    print(f'Compiling dataset at path: {dataset_path}')
 
-    X_valid = []
-    y_valid = []
+    with open(dataset_path, 'rb') as f:
+        (X, y) = pickle.load(f)
 
-    X_test = []
-    y_test = []
+    X = tf.convert_to_tensor(X, dtype=tf.float32)
+    y = tf.convert_to_tensor(y, dtype=tf.int32)
 
-    for dataset in datasets:
-        dataset_path = f'{datasets_folder}/{dataset}'
+    indices = np.arange(X.shape[0])
+    np.random.shuffle(indices)
 
-        print(f'Compiling dataset at path: {dataset_path}')
+    valid_size = int(valid_split * len(X))
+    test_size = int(test_split * len(X))
+    train_size = len(X) - valid_size - test_size
 
-        with open(dataset_path, 'rb') as f:
-            (X, y) = pickle.load(f)
+    final_indices = [indices[:train_size], indices[train_size:train_size + valid_size], indices[train_size + valid_size:]]
 
-        X = tf.convert_to_tensor(X, dtype=tf.float32)
-        y = tf.convert_to_tensor(y, dtype=tf.int32)
+    X_train = tf.gather(X, final_indices[0])
+    y_train = tf.gather(y, final_indices[0])
 
-        print(X.shape)
+    X_valid = tf.gather(X, final_indices[1])
+    y_valid = tf.gather(y, final_indices[1])
 
-        indices = np.arange(X.shape[0])
-        np.random.shuffle(indices)
-
-        valid_size = int(valid_split * len(X))
-        test_size = int(test_split * len(X))
-        train_size = len(X) - valid_size - test_size
-
-        final_indices = [indices[:train_size], indices[train_size:train_size + valid_size], indices[train_size + valid_size:]]
-
-        X_train.append(tf.gather(X, final_indices[0]))
-        y_train.append(tf.gather(y, final_indices[0]))
-
-        X_valid.append(tf.gather(X, final_indices[1]))
-        y_valid.append(tf.gather(y, final_indices[1]))
-
-        X_test.append(tf.gather(X, final_indices[2]))
-        y_test.append(tf.gather(y, final_indices[2]))
-
-    X_train = tf.concat(X_train, axis=0)
-    y_train = tf.concat(y_train, axis=0)
-
-    X_valid = tf.concat(X_valid, axis=0)
-    y_valid = tf.concat(y_valid, axis=0)
-
-    X_test = tf.concat(X_test, axis=0)
-    y_test = tf.concat(y_test, axis=0)
+    X_test = tf.gather(X, final_indices[2])
+    y_test = tf.gather(y, final_indices[2])
 
     return [(X_train, y_train), (X_valid, y_valid), (X_test, y_test)]
 
@@ -157,7 +133,7 @@ def build_cnn():
     ])
 
     # Define optimizer
-    optimizer = keras.optimizers.Adam(learning_rate=5e-5, use_ema=True)
+    optimizer = keras.optimizers.Adam(learning_rate=5e-3, use_ema=True)
 
     # Compile the model
     model.compile(loss='sparse_categorical_crossentropy', metrics=['accuracy'], optimizer=optimizer)
@@ -173,18 +149,19 @@ if __name__ == "__main__":
 
     #Downsample all images by a factor of 2
     IMG_SIZE = (243, 256, 3)
-    BATCH_SIZE = 32
-    NUM_CLASSES = 6  # there are six tile types in Catan
+    BATCH_SIZE = 24
+    NUM_CLASSES = 10  # there are six tile types in Catan
     epochs = 100 # the maximum number of epochs used to train the model
     validation_split = 0.2
     test_split = 0.1
     path_to_predict = '../data/sample/test.jpg'
-    model_save_path = '../board_piece_classification/model/tile_detector.keras'
-    datasets_folder = '../data/full/compiled_dataset'
+    model_save_path = '../board_piece_classification/model/tile_detector_numbers.keras'
+    dataset_path = '../data/full/compiled_dataset/synthetic_dataset_numbers.pkl'
+    label_encoder_path = '../data/full/compiled_dataset/label_encoder/label_encoder_numbers.pkl'
 
     ##### DATASET PRE-PROCESSING #####
 
-    final_sets = build_dataset(datasets_folder, validation_split, test_split)
+    final_sets = build_dataset(dataset_path, validation_split, test_split)
 
     X_train, y_train = final_sets[0]
     train_set = tf.data.Dataset.from_tensor_slices((X_train, y_train))
@@ -212,7 +189,7 @@ if __name__ == "__main__":
     # Test the model on the test set
     model_eval(model, test_set)
 
-    with open(f'{datasets_folder}/label_encoder/label_encoder.pkl', 'rb') as f:
+    with open(label_encoder_path, 'rb') as f:
         label_encoder = pickle.load(f)
 
     # Predict a single sample that is different from the test set

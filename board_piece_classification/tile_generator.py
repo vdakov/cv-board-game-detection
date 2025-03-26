@@ -1,25 +1,45 @@
 from PIL import Image, ImageDraw, ImageFont
+from sklearn.preprocessing import LabelEncoder
 from torchvision.transforms import ToTensor
 from torch.nn.functional import interpolate
 import tensorflow as tf
 import pickle
 import os
 
-def to_tf_dataset(ds_dict, output_path):
-    input = [x.numpy() for x in ds_dict['img_tensor']]
-    labels = ds_dict['img_label']
+def save_to_file(file_path, obj):
+    with open(file_path, 'wb') as f:
+        pickle.dump(obj, f)
 
-    # Convert labels (string categories) with premade label encoder
-    with open('../data/full/compiled_dataset/label_encoder/label_encoder.pkl', 'rb') as f:
-        label_encoder = pickle.load(f)
-    y_encoded = label_encoder.transform(labels)
+def to_tf_datasets(ds_dict, output_path):
+    input = [x.numpy() for x in ds_dict['img_tensor']]
+    hex_labels = ds_dict['img_label_hexagon']
+    no_labels = ds_dict['img_label_number']
+
+    # Encode the hexes' labels and save them to file
+    hex_encoder = LabelEncoder()
+    y_hexagons_encoded = hex_encoder.fit_transform(hex_labels)
+    hex_encoder_path = f'{output_path}/label_encoder/label_encoder_hexagons.pkl'
+    save_to_file(hex_encoder_path, hex_encoder)
+
+    # Encode the number labels and save them to file
+    no_encoder = LabelEncoder()
+    y_numbers_encoded = no_encoder.fit_transform(no_labels)
+    number_encoder_path = f'{output_path}/label_encoder/label_encoder_numbers.pkl'
+    save_to_file(number_encoder_path, no_encoder)
 
     # Convert to TensorFlow tensors
-    X_tensorflow = tf.convert_to_tensor(input, dtype=tf.float32)
-    y_tensorflow = tf.convert_to_tensor(y_encoded, dtype=tf.int32)
+    X = tf.convert_to_tensor(input, dtype=tf.float32)
+    y_hexagons = tf.convert_to_tensor(y_hexagons_encoded, dtype=tf.int32)
+    y_numbers = tf.convert_to_tensor(y_numbers_encoded, dtype=tf.int32)
 
-    with open(f'{output_path}/generated_synthetic_samples.pkl', 'wb') as f:
-        pickle.dump((X_tensorflow.numpy(), y_tensorflow.numpy()), f)
+    print('Compiled datasets; preparing to store')
+
+    save_path_hexagons = f'{output_path}/synthetic_dataset_hexagons.pkl'
+    save_path_numbers = f'{output_path}/synthetic_dataset_numbers.pkl'
+
+    save_to_file(save_path_hexagons, (X, y_hexagons))
+    save_to_file(save_path_numbers, (X, y_numbers))
+
 
 def generate_tile_image(image_path, bg_path, number=None, font=None, tile_type='desert'):
     # Load the background image
@@ -110,7 +130,8 @@ if __name__ == '__main__':
     final_dict = {
         'img_path': [],
         'img_tensor': [],
-        'img_label': []
+        'img_label_hexagon': [],
+        'img_label_number': []
     }
 
     bg_index = 0
@@ -133,12 +154,13 @@ if __name__ == '__main__':
                 # Save relevant information to dictionary
                 final_dict['img_path'].append(img_path)
                 final_dict['img_tensor'].append(img_to_tensor(img, img_size))
-                final_dict['img_label'].append(tile)
+                final_dict['img_label_hexagon'].append(tile)
+                final_dict['img_label_number'].append(number)
 
         bg_index += 1
 
     print('Synthetic samples obtained')
 
-    to_tf_dataset(final_dict, output_ds_path)
+    to_tf_datasets(final_dict, output_ds_path)
 
     print('Synthetic samples saved to pickle dataset')
