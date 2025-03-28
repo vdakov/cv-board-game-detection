@@ -23,13 +23,8 @@ def preprocess_image(img, zoom, final_size):
     img = img.crop((x - w / zoom2, y - h / zoom2,
                     x + w / zoom2, y + h / zoom2))
 
-    img = img.resize(final_size)
+    img = img.resize(final_size).convert('RGB')
 
-    # Then keep the number only (so anything that is either black or bright red)
-    # and convert the rest to white
-    img = img.convert('RGB')
-
-    img.show()
     return img
 
 def to_tf_datasets(ds_dict, output_path):
@@ -65,7 +60,7 @@ def to_tf_datasets(ds_dict, output_path):
     save_to_file(save_path_numbers, (X_no, y_numbers))
 
 
-def draw_number_plate(img, number, font):
+def draw_number_plate(img, number, font_path):
     # Get image size
     width, height = img.size
 
@@ -91,7 +86,7 @@ def draw_number_plate(img, number, font):
 
     try:
         font_size = circle_radius  # Set font size based on circle size
-        font = ImageFont.truetype(font, font_size)
+        font = ImageFont.truetype(font_path, font_size)
     except IOError:
         font = ImageFont.load_default()
 
@@ -100,7 +95,7 @@ def draw_number_plate(img, number, font):
     text_size = draw.textbbox((0, 0), number_text, font=font)
     text_width = text_size[2] - text_size[0]
     text_height = text_size[3] - text_size[1]
-    text_position = (circle_center[0] - text_width // 2, circle_center[1] - text_height * 1.5)
+    text_position = (circle_center[0] - text_width // 2, circle_center[1] - text_height)
 
     # Draw text (black or bright red depending on the piece)
     if number_text == '8' or number_text == '6':
@@ -110,24 +105,9 @@ def draw_number_plate(img, number, font):
 
     draw.text(text_position, number_text, font=font, fill=fill_color)
 
-    # Draw the dots underneath the number
-    # Calculate the number of dots
-    # Formula taken from Alex Beals' Catan Board Generator
-    dot_count = 6 - abs(int(number) - 7) + 1
-    dot_radius = circle_radius // 12
-    dot_spacing = dot_radius * 2.25
-
-    for i in range(dot_count):
-        dot_x = circle_center[0] - (dot_count - 1) * dot_spacing // 2 + i * dot_spacing
-        dot_y = circle_center[1] + circle_radius // 2
-        draw.ellipse(
-            [(dot_x - dot_radius, dot_y - dot_radius), (dot_x + dot_radius, dot_y + dot_radius)],
-            fill=fill_color
-        )
-
     return img
 
-def generate_tile_image(image_path, bg_path, number=None, font=None, tile_type='desert'):
+def generate_tile_image(image_path, bg_path, number=None, font_path=None, tile_type='desert'):
     # Load the background image
     img = Image.open(image_path).convert('RGBA')
 
@@ -139,7 +119,7 @@ def generate_tile_image(image_path, bg_path, number=None, font=None, tile_type='
 
         return combined
 
-    img = draw_number_plate(img, font, number)
+    img = draw_number_plate(img, number, font_path)
 
     bg = Image.open(bg_path).convert('RGBA')
     bg = bg.resize(img.size)
@@ -159,7 +139,7 @@ def img_to_tensor(img, img_size):
 
 if __name__ == '__main__':
 
-    font = 'C:/Windows/Fonts/Georgia/georgia.ttf' # add a path to your own font
+    font_path = 'C:/Windows/Fonts/georgia.ttf' # add a path to your own font
     tile_bgs_path = '../data/tile_datasets/hexagons'
     output_img_path = '../data/full/generated_synthetic_tiles'
     output_ds_path = '../data/full/compiled_dataset'
@@ -194,7 +174,7 @@ if __name__ == '__main__':
 
             for number in valid_numbers:
                 # Generate image
-                img = generate_tile_image(img_path, bg_path, number, font, tile)
+                img = generate_tile_image(img_path, bg_path, number, font_path, tile)
 
                 # Save image
                 img.save(f'{output_img_path}/bg_{bg_index}_{tile}_{number}.png')
@@ -210,9 +190,6 @@ if __name__ == '__main__':
                 final_dict['number_tensor'].append(final_digit)
                 final_dict['img_label_hexagon'].append(tile)
                 final_dict['img_label_number'].append(number)
-
-                if number == '2':
-                    sys.exit('Done')
 
         bg_index += 1
 
