@@ -4,15 +4,15 @@ import numpy as np
 import os
 import json
 import pandas as pd
+import argparse
 
 
-def get_args():
+def parse_args():
     parser = argparse.ArgumentParser()
-    args = parser.parse_args()
     parser.add_argument('--input_dir', help= "Enter the path to the directory with the images on which perspective distortion will be applied.", type=str, default="data/full/mined_synthetic_boards_blended")
     parser.add_argument("--output_dir", help="Input the path to the directory where the output of the distorted images will be stored.", type=str, default="data/full/perspective_distorted_boards")
     parser.add_argument("--bbox_csv_dir", help="Input the path to the directory where the bounding boxes of the original boards are.", type=str, default="data/full/mined_synthetic_boards_blended/bboxes.csv")
-
+    args = parser.parse_args()
     return args
 
 def perspective_warp(img, bbox_coords):
@@ -59,7 +59,7 @@ def perspective_warp_all(input_dir, output_dir, bbox_csv):
 
     for img_path in os.listdir(input_dir):
         if img_path.endswith(".png"):
-            img = cv2.imread(os.path.join(input, img_path)) 
+            img = cv2.imread(os.path.join(input_dir, img_path)) 
             bbox_coords_df = bbox_csv.iloc[[2]] 
             x_min, x_max, y_min, y_max = bbox_coords_df['x_min'], bbox_coords_df['x_max'], bbox_coords_df['y_min'], bbox_coords_df['y_max']
             bbox_coords = np.array([[x_min, y_min], [x_min, y_max], [x_max, y_min], [x_max, y_max]], dtype=np.float32)

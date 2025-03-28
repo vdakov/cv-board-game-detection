@@ -12,13 +12,13 @@ import csv
 from pre_processing.background_blend import blend_with_random_background
 import argparse 
 
-def get_args():
+def parse_args():
     parser = argparse.ArgumentParser()
-    args = parser.parse_args()
+    
     parser.add_argument("--raw_output_dir", help="Input the path to the directory where the raw synthetic catan images will be stored.", type=str, default="data/full/mined_synthetic_boards")
-    parser.add_argument("--blended_output_dir", help="Input the path to the directory where the synthetic catan, blended with other synthetic images will be stored.", type=str, default="data/full/minmined_synthetic_boardsed_synthetic_boards_blended")
-    parser.add_argument("--num_images", help="Enter the amout of images you wanna create", default=1000)
-
+    parser.add_argument("--blended_output_dir", help="Input the path to the directory where the synthetic catan, blended with other synthetic images will be stored.", type=str, default="data/full/mined_synthetic_boards_blended")
+    parser.add_argument("--num_images", help="Enter the amout of images you wanna create", type=int, default=100)
+    args = parser.parse_args()
     return args
 
 
@@ -47,9 +47,10 @@ def mine_boards(raw_output_dir, blended_output_dir, num_images):
     try:
         driver.get(website_url)
         raw_csv_path, blended_csv_path = write_csvs(raw_output_dir, blended_output_dir)
-        raw_image_path = os.path.join(raw_output_dir, f"canvas_image_{i}.png")
+        
         
         for i in range(num_images):
+            raw_image_path = os.path.join(raw_output_dir, f"canvas_image_{i}.png")
             # Wait until the button is clickable and click it
             button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable(button_locator)
@@ -81,7 +82,7 @@ def mine_boards(raw_output_dir, blended_output_dir, num_images):
 
             with open(raw_csv_path, "a", newline="") as file:
                 writer = csv.writer(file)
-                writer.writerow([raw_image_name, x_offset, y_offset, x_offset + main_image_size[0], y_offset + main_image_size[1]])
+                writer.writerow([raw_image_path, x_offset, y_offset, x_offset + main_image_size[0], y_offset + main_image_size[1]])
 
             background = Image.new("RGBA", background_size, (0, 0, 0, 0))  # Transparent background
         
