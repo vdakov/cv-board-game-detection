@@ -45,33 +45,9 @@ def model_eval(model, ds_test):
     print(f'Model loss on the test dataset: {loss}')
     print(f'Model accuracy on the test set: {acc}')
 
-def preprocess_image(img, zoom, final_size, threshold):
-    w, h = img.size
-
-    # First zoom to the center of the image
-    x = w / 2
-    y = h / 2
-
-    zoom2 = zoom * 2
-
-    img = img.crop((x - w / zoom2, y - h / zoom2,
-                    x + w / zoom2, y + h / zoom2))
-
-    img = img.resize(final_size)
-
-    # Then keep the number only (so anything that is either black or bright red)
-    # and convert the rest to white
-    img = img.convert('L')
-    img = img.point(lambda p: 255 if p > threshold else 0)
-    img = img.convert('1')
-
-    return img
-
-def model_predict(model, sample, label_encoder, img_size, is_number):
+def model_predict(model, sample, label_encoder, img_size):
     # Read the image
-    img = Image.open(sample)
-    if is_number:
-        img = preprocess_image(img, 3, img_size, 85)
+    img = Image.open(sample).convert('RGB')
     img_np = ToTensor()(img)
     img_np = torch.nn.functional.interpolate(img_np.unsqueeze(0), size=img_size[:2])
     img_np = img_np.permute(0, 2, 3, 1)
@@ -86,7 +62,7 @@ def model_predict(model, sample, label_encoder, img_size, is_number):
 
 def model_training(model, train_set, valid_set, epochs):
     # Stop when the loss does not improve significantly over 3 epochs
-    callback = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.001, patience=10)
+    callback = callbacks.EarlyStopping(monitor='loss', min_delta=0.01, patience=3)
 
     # Keras expects a batched dataset
     batched_train = train_set.batch(BATCH_SIZE)
@@ -157,7 +133,7 @@ def build_cnn(input_shape):
     ])
 
     # Define optimizer
-    optimizer = keras.optimizers.Adam(learning_rate=5e-3, use_ema=True)
+    optimizer = keras.optimizers.Adam(learning_rate=5e-5, use_ema=True)
 
     # Compile the model
     model.compile(loss='sparse_categorical_crossentropy', metrics=['accuracy'], optimizer=optimizer)
@@ -171,16 +147,16 @@ if __name__ == "__main__":
 
     ##### PARAMETER DEFINITION #####
 
-    #Downsample all images by a factor of 2
+    #Downsample all images for faster training
     IMG_SIZE = (243, 256, 3)
     digit_size = (100, 100, 3)
-    BATCH_SIZE = 24
+    BATCH_SIZE = 32
     NUM_CLASSES = 6  # there are six tile types in Catan
     epochs = 100 # the maximum number of epochs used to train the model
     validation_split = 0.2
     test_split = 0.1
-    path_to_predict = '../data/sample/test.jpg'
-    model_save_path = '../board_piece_classification/model/tile_detector_hexagons_with_dots.keras'
+    path_to_predict = '../data/sample/test1.png'
+    model_save_path = '../board_piece_classification/model/tile_detector_hexagons2.keras'
     dataset_path = '../data/full/compiled_dataset/synthetic_dataset_hexagons.pkl'
     label_encoder_path = '../data/full/compiled_dataset/label_encoder/label_encoder_hexagons.pkl'
 
@@ -218,4 +194,4 @@ if __name__ == "__main__":
         label_encoder = pickle.load(f)
 
     # Predict a single sample that is different from the test set
-    model_predict(model, path_to_predict, label_encoder, digit_size[:2], False)
+    model_predict(model, path_to_predict, label_encoder, IMG_SIZE[:2])
