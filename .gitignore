@@ -174,3 +174,4 @@ data/full/
 myenv
 board_segmentation/sam_checkpoint/sam_vit_h_4b8939.pth 
 board_detection/yolov8n.pt
+board_piece_classification/model

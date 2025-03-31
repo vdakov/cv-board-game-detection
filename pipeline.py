@@ -15,7 +15,7 @@ def extract_hexagons(board_image):
 def classifiy_hexagon_types(hexagons):
     pass
 
-def assign_numbers_to_hexagons(classified_hexagons)
+def assign_numbers_to_hexagons(classified_hexagons):
     pass 
 
 def assemble_board(classified_hexagons_with_numbers):
