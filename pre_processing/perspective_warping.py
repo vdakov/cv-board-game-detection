@@ -3,6 +3,17 @@ import cv2
 import numpy as np 
 import os
 import json
+import pandas as pd
+import argparse
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input_dir', help= "Enter the path to the directory with the images on which perspective distortion will be applied.", type=str, default="data/full/mined_synthetic_boards_blended")
+    parser.add_argument("--output_dir", help="Input the path to the directory where the output of the distorted images will be stored.", type=str, default="data/full/perspective_distorted_boards")
+    parser.add_argument("--bbox_csv_dir", help="Input the path to the directory where the bounding boxes of the original boards are.", type=str, default="data/full/mined_synthetic_boards_blended/bboxes.csv")
+    args = parser.parse_args()
+    return args
 
 def perspective_warp(img, bbox_coords):
     h, w = img.shape[:2]  # Keep original height and width
@@ -41,28 +52,40 @@ def perspective_warp(img, bbox_coords):
 
     return out_img, new_coords
 
-output_dir = "data/perspective_distorted_boards"
-os.makedirs(output_dir, exist_ok=True)
 
-bbox_output = {}
+def perspective_warp_all(input_dir, output_dir, bbox_csv):
 
-for img_path in os.listdir("data/full/mined_synthetic_boards"):
-    if img_path.endswith(".png"):
-        img = cv2.imread(os.path.join("data/full/mined_synthetic_boards", img_path))  
-        bbox_coords = np.array([[130, 0], [130, 642], [765, 0], [765, 642]], dtype=np.float32)
+    bbox_output = {}
 
-        warped_img, new_bbox = perspective_warp(img, bbox_coords)
+    for img_path in os.listdir(input_dir):
+        if img_path.endswith(".png"):
+            img = cv2.imread(os.path.join(input_dir, img_path)) 
+            bbox_coords_df = bbox_csv.iloc[[2]] 
+            x_min, x_max, y_min, y_max = bbox_coords_df['x_min'], bbox_coords_df['x_max'], bbox_coords_df['y_min'], bbox_coords_df['y_max']
+            bbox_coords = np.array([[x_min, y_min], [x_min, y_max], [x_max, y_min], [x_max, y_max]], dtype=np.float32)
+            
 
-        # Save the warped image
-        warped_img_path = os.path.join(output_dir, img_path)
-        cv2.imwrite(warped_img_path, warped_img)
-        
-        # Store new bbox coordinates
-        bbox_output[img_path] = new_bbox.tolist()
-        print(f"Image {img_path} warped and saved")
+            warped_img, new_bbox = perspective_warp(img, bbox_coords)
 
-# Save bounding box coordinates as JSON
-with open(os.path.join(output_dir, "bbox_coordinates.json"), "w") as f:
-    json.dump(bbox_output, f, indent=4)
+            # Save the warped image
+            warped_img_path = os.path.join(output_dir, img_path)
+            cv2.imwrite(warped_img_path, warped_img)
+            
+            # Store new bbox coordinates
+            bbox_output[img_path] = new_bbox.tolist()
+            print(f"Image {img_path} warped and saved")
 
-print("Bounding box coordinates saved")
+    # Save bounding box coordinates as JSON
+    with open(os.path.join(output_dir, "bbox_coordinates.json"), "w") as f:
+        json.dump(bbox_output, f, indent=4)
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    input_dir = args.input_dir
+    output_dir = args.output_dir
+    os.makedirs(output_dir, exist_ok=True)
+    bbox_csv_dir = args.bbox_csv_dir
+    bbox_csv = pd.read_csv(bbox_csv_dir)
+
+    perspective_warp_all(input_dir, output_dir, bbox_csv)
