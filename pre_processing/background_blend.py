@@ -2,7 +2,7 @@ import os
 import random
 from PIL import Image, ImageFilter, ImageEnhance
 
-def blend_with_random_background(main_image, background_dir, blur_radius=3, brightness_factor=1.2):
+def blend_with_random_background(main_image, background_dir, blur_radius=1, brightness_factor=1.2):
     background_images = [f for f in os.listdir(background_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     
     if not background_images:

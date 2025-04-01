@@ -74,7 +74,7 @@ def mine_boards(raw_output_dir, blended_output_dir, num_images):
             main_image = Image.open(BytesIO(image_data)).convert("RGBA")
             main_image_size = list(main_image.size)
             
-            background_size = (1500, 1500) 
+            background_size = (512, 512) 
             background = Image.new("RGBA", background_size, (0, 0, 0, 0))  # Transparent background
             x_offset, y_offset  = int(background_size[0] - main_image_size[0]) // 2, int(background_size[1] - main_image_size[1]) // 2
             background.paste(main_image, (x_offset, y_offset), main_image)
@@ -105,7 +105,7 @@ def mine_boards(raw_output_dir, blended_output_dir, num_images):
 
             # Paste the main image onto the background
             background.paste(main_image, (x_offset, y_offset), main_image)
-            blended_image = blend_with_random_background(background, "data/full/synthetic_table_images")
+            blended_image = blend_with_random_background(background, "data/tables")
             blended_image_name = f"canvas_image_{i}.png"
             blended_image_path = os.path.join(blended_output_dir, blended_image_name)
             blended_image.save(blended_image_path)
