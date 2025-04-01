@@ -87,11 +87,11 @@ def mine_boards(raw_output_dir, blended_output_dir, num_images):
             background = Image.new("RGBA", background_size, (0, 0, 0, 0))  # Transparent background
         
             # Define a random scale factor (between 0.5x and 1.5x for variation)
-            scale_factor = random.uniform(0.75, 1.5)
+            scale_factor = random.uniform(0.5, 1)
 
             # Compute new image size while maintaining aspect ratio
-            new_width = int(main_image_size[0] * scale_factor)
-            new_height = int(main_image_size[1] * scale_factor)
+            new_width = int(background_size[0] * scale_factor)
+            new_height = int(background_size[1] * scale_factor)
             new_width = min(new_width, background_size[0])
             new_height = min(new_height, background_size[1])
             main_image = main_image.resize((new_width, new_height), Image.LANCZOS)
