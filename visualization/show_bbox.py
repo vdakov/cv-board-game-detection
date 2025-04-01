@@ -15,19 +15,8 @@ def show_bounding_box(bbox, ax=None, edgecolor='red', linewidth=2, label=None):
     Returns:
         ax (matplotlib.axes.Axes): The axes with the bounding box drawn.
     """
-    if ax is None:
-        fig, ax = plt.subplots()
-    
-    # Create a rectangle patch based on the bounding box coordinates
-    rect = patches.Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3],
-                             linewidth=linewidth, edgecolor=edgecolor, facecolor='none', label=label)
-    ax.add_patch(rect)
-    
-    # If a label is provided, show a legend
-    if label:
-        ax.legend()
-    
-    return ax
+    polygon = plt.Polygon(bbox, edgecolor=edgecolor, fill=False, linewidth=linewidth, label=label)
+    ax.add_patch(polygon)
 
 def show_two_bounding_boxes(bbox1, bbox2, image1=None, image2=None,
                             edgecolor1='red', edgecolor2='blue'):

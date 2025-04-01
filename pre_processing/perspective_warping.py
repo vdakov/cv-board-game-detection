@@ -41,7 +41,7 @@ def perspective_warp(img, bbox_coords):
 
         # Generate random perturbations for each corner within the range
     perturbed_coords = np.float32(np.array([
-        [x_min_top, y_min_perturbed], [x_max_top, y_min_perturbed], [x_min_bottom, y_max_perturbed], [x_max_bottom, y_max_perturbed]
+        [x_min_top, y_min_perturbed], [x_min_bottom, y_max_perturbed], [x_max_bottom, y_max_perturbed], [x_max_top, y_min_perturbed]
     ])).reshape(4,2)
 
     # Rotation matrix
@@ -50,10 +50,10 @@ def perspective_warp(img, bbox_coords):
         [np.sin(rotation_perturbation), np.cos(rotation_perturbation)]
     ])
 
-    # Rotate each coordinate
+    # # Rotate each coordinate
     center = np.mean(perturbed_coords, axis=0)  # Find the center point of your quadrilateral
     perturbed_coords_centered = perturbed_coords - center  # Translate to origin for rotation
-    perturbed_coords = perturbed_coords_centered @ rotation_matrix  # Apply rotation
+    perturbed_coords = (rotation_matrix @ perturbed_coords_centered.T).T  # Apply rotation correctly
     perturbed_coords += center
     
     # Ensure the perturbed points are within image boundaries
@@ -65,9 +65,9 @@ def perspective_warp(img, bbox_coords):
     # Example bbox_coords (also needs to be float32)
     bbox_coords = np.float32([
         [x_min, y_min],
-        [x_max, y_min],
         [x_min, y_max],
-        [x_max, y_max]
+        [x_max, y_max],
+        [x_max, y_min],
     ])
 
     # Compute homography matrix
@@ -99,7 +99,7 @@ def perspective_warp_all(input_dir, output_dir, bbox_csv):
             
             # Store new bbox coordinates
             bbox_output[img_path] = new_bbox.tolist()
-            bbox_output["homography_matrix"] = matrix.tolist()
+            bbox_output[f"{img_path}_homography_matrix"] = matrix.tolist()
             print(f"Image {img_path} warped and saved")
 
     # Save bounding box coordinates as JSON

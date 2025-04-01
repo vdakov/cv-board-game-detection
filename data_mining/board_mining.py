@@ -11,6 +11,7 @@ import os
 import csv
 from pre_processing.background_blend import blend_with_random_background
 import argparse 
+import json
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -44,6 +45,7 @@ def write_csvs(raw_output_dir, blended_output_dir):
 
 
 def mine_boards(raw_output_dir, blended_output_dir, num_images):
+    bbox_data = {"raw": {}, "blended": {}}
     try:
         driver.get(website_url)
         raw_csv_path, blended_csv_path = write_csvs(raw_output_dir, blended_output_dir)
@@ -80,14 +82,18 @@ def mine_boards(raw_output_dir, blended_output_dir, num_images):
             background.paste(main_image, (x_offset, y_offset), main_image)
             background.save(raw_image_path)
 
-            with open(raw_csv_path, "a", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerow([raw_image_path, x_offset, y_offset, x_offset + main_image_size[0], y_offset + main_image_size[1]])
+
+            bbox_data["raw"][f"canvas_image_{i}.png"] = {
+                "x_min": x_offset,
+                "y_min": y_offset,
+                "x_max": x_offset + main_image_size[0],
+                "y_max": y_offset + main_image_size[1]
+            }
 
             background = Image.new("RGBA", background_size, (0, 0, 0, 0))  # Transparent background
         
-            # Define a random scale factor (between 0.5x and 1.5x for variation)
-            scale_factor = random.uniform(0.5, 1)
+            # Define a random scale factor (between 0.5x and 1x for variation)
+            scale_factor = random.uniform(0.5, 0.8)
 
             # Compute new image size while maintaining aspect ratio
             new_width = int(background_size[0] * scale_factor)
@@ -110,11 +116,19 @@ def mine_boards(raw_output_dir, blended_output_dir, num_images):
             blended_image_path = os.path.join(blended_output_dir, blended_image_name)
             blended_image.save(blended_image_path)
 
-            with open(blended_csv_path, "a", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerow([blended_image_name, x_offset, y_offset, x_offset + new_width, y_offset + new_height])
-            
-            print(f"Image {i} downloaded successfully and saved as '{blended_image_path}'.")
+            bbox_data["blended"][blended_image_name] = {
+                "x_min": x_offset,
+                "y_min": y_offset + new_height // 10,
+                "x_max": x_offset + new_width,
+                "y_max": y_offset + new_height - new_height // 10
+            }
+
+            print(f"Image {i} processed successfully.")
+
+    finally:    
+        with open(os.path.join(blended_output_dir, "bboxes.json"), "w") as f:
+            json.dump(bbox_data, f, indent=4)
+        driver.quit()
                 
     except Exception as e:
             print("An error occurred:", e)
