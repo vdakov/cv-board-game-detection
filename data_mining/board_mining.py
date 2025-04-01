@@ -17,7 +17,7 @@ def parse_args():
     
     parser.add_argument("--raw_output_dir", help="Input the path to the directory where the raw synthetic catan images will be stored.", type=str, default="data/full/mined_synthetic_boards")
     parser.add_argument("--blended_output_dir", help="Input the path to the directory where the synthetic catan, blended with other synthetic images will be stored.", type=str, default="data/full/mined_synthetic_boards_blended")
-    parser.add_argument("--num_images", help="Enter the amout of images you wanna create", type=int, default=100)
+    parser.add_argument("--num_images", help="Enter the amout of images you wanna create", type=int, default=2000)
     args = parser.parse_args()
     return args
 
