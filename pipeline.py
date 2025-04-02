@@ -1,7 +1,7 @@
 import argparse
 import keras
 import pickle
-from board_piece_classification.hexagon_prediction import predict_hexagons, preprocess_image
+from board_piece_classification.hexagon_prediction import predict_image
 from PIL import Image
 import pytesseract
 import os
@@ -50,14 +50,13 @@ def classifiy_hexagon_types(hexagon_image_folder):
     for img in os.listdir(hexagon_image_folder):
         img_path = f'{hexagon_image_folder}/{img}'
 
+        pred_hex_label, pred_number_label = predict_image(img_path, model, label_encoder, IMG_SIZE)
+
         final_dict["hex_id"].append(hex_id)
-
-        pred_hex_label = predict_hexagons(model, img_path, label_encoder, IMG_SIZE[:2])
         final_dict["hex_label"].append(pred_hex_label)
+        final_dict["number_label"].append(pred_number_label)
 
-        img1 = np.array(preprocess_image(Image.open(img_path), 3.5, 85))
-        text = pytesseract.image_to_string(img1, config='--psm 3')
-        final_dict["number_label"].append(text)
+        hex_id += 1
 
     return final_dict
 
