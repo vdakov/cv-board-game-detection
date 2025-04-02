@@ -32,8 +32,7 @@ class HomographyDataset(Dataset):
         matrix = self.homography_matrix_labels[f"{img_name}_homography_matrix"]
         if self.output_transform:
             label = self.output_transform(matrix)
-
-        
+    
         return image, label
 
 class HomographyOutputTransform:
@@ -43,8 +42,6 @@ class HomographyOutputTransform:
 
     def __call__(self, homography_matrix):
         homography_numpy = np.array(homography_matrix, dtype=np.float32)
-
-
         s_x = self.old_size[0] / self.new_size[0]
         s_y = self.old_size[1] / self.new_size[1]
 
@@ -52,6 +49,8 @@ class HomographyOutputTransform:
                       [0, s_y, 0],
                       [0, 0, 1]])
 
-        H_new = homography_numpy @ S
+        
+
+        H_new = np.linalg.inv(S) @ homography_numpy @ S
         return H_new
 
