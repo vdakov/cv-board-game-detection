@@ -5,8 +5,9 @@ from torchvision.transforms import ToTensor
 import torch
 import numpy as np
 import pickle
+import pytesseract
 
-def model_predict(model, sample, label_encoder, img_size):
+def predict_hexagons(model, sample, label_encoder, img_size):
     # Read the image
     img = Image.open(sample).convert('RGB')
     img_np = ToTensor()(img)
@@ -19,7 +20,29 @@ def model_predict(model, sample, label_encoder, img_size):
 
     pred_label = label_encoder.inverse_transform([np.argmax(pred)])
 
-    print(f'Image at path: {sample} is a {pred_label} tile')
+    return pred_label
+
+def preprocess_image(img, zoom, threshold):
+    w, h = img.size
+
+    # First zoom to the center of the image
+    x = w / 2
+    y = h / 2
+
+    zoom2 = zoom * 2
+
+    img = img.crop((x - w / zoom2, y - h / zoom2,
+                    x + w / zoom2, y + h / zoom2))
+
+    # Then keep the number only (so anything that is either black or bright red)
+    # and convert the rest to white
+    img = img.convert('L')
+    img = img.point(lambda p: 255 if p > threshold else 0)
+    img = img.convert('1')
+
+    img.show()
+
+    return img
 
 if __name__ == '__main__':
 
@@ -35,5 +58,7 @@ if __name__ == '__main__':
 
     for i in range(1, 5):
         img_path = f'{img_folder_path}/test{i}.png'
-        model_predict(model, img_path, label_encoder, IMG_SIZE[:2])
+        predict_hexagons(model, img_path, label_encoder, IMG_SIZE[:2])
 
+        img1 = np.array(preprocess_image(Image.open(img_path), 3.5, 85))
+        text = pytesseract.image_to_string(img1, config='--psm 3')
