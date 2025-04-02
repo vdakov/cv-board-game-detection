@@ -5,21 +5,22 @@ import os
 import json
 import pandas as pd
 import argparse
-
+import json
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', help= "Enter the path to the directory with the images on which perspective distortion will be applied.", type=str, default="data/full/mined_synthetic_boards_blended")
     parser.add_argument("--output_dir", help="Input the path to the directory where the output of the distorted images will be stored.", type=str, default="data/full/perspective_distorted_boards")
-    parser.add_argument("--bbox_csv_dir", help="Input the path to the directory where the bounding boxes of the original boards are.", type=str, default="data/full/mined_synthetic_boards_blended/bboxes.csv")
+    parser.add_argument("--bbox_json_dir", help="Input the path to the directory where the bounding boxes of the original boards are.", type=str, default="data/full/mined_synthetic_boards_blended/bboxes.json")
     args = parser.parse_args()
     return args
 
 def perspective_warp(img, bbox_coords):
     h, w = img.shape[:2]  # Image height and width
-    x_min, x_max, y_min, y_max = bbox_coords
 
-    angle_perturbation = np.random.uniform(-np.pi/6, np.pi/6)
+    [x_min, y_min],_,  [x_max, y_max], _= bbox_coords
+
+    angle_perturbation = np.random.uniform(-np.pi/3, np.pi/3)
     rotation_perturbation = np.random.uniform(-np.pi/6, np.pi/6)
     scaling_height = np.random.uniform(0.75, 1.25)
     scaling_width = np.random.uniform(0.75, 1.25)
@@ -61,14 +62,9 @@ def perspective_warp(img, bbox_coords):
     perturbed_coords[:, 1] = np.clip(perturbed_coords[:, 1], 0, h - 1)
 
     perturbed_coords = np.array(perturbed_coords, dtype=np.float32)
+    bbox_coords = np.array([coord for coord in bbox_coords], dtype=np.float32)
+    # print(bbox_coords, perturbed_coords)
 
-    # Example bbox_coords (also needs to be float32)
-    bbox_coords = np.float32([
-        [x_min, y_min],
-        [x_min, y_max],
-        [x_max, y_max],
-        [x_max, y_min],
-    ])
 
     # Compute homography matrix
     matrix = cv2.getPerspectiveTransform(bbox_coords, perturbed_coords)
@@ -78,18 +74,22 @@ def perspective_warp(img, bbox_coords):
 
     return out_img, perturbed_coords, matrix
 
-def perspective_warp_all(input_dir, output_dir, bbox_csv):
+def perspective_warp_all(input_dir, output_dir, bbox_df):
 
     bbox_output = {}
 
     for img_path in os.listdir(input_dir):
         if img_path.endswith(".png"):
             img = cv2.imread(os.path.join(input_dir, img_path)) 
-            bbox_coords_df = bbox_csv[bbox_csv["image_name"] == img_path] 
+            bbox_coords = np.array(bbox_df[img_path])
             
-            x_min, x_max, y_min, y_max = bbox_coords_df['x_min'], bbox_coords_df['x_max'], bbox_coords_df['y_min'], bbox_coords_df['y_max']
-            bbox_coords = np.array([x_min, x_max, y_min, y_max], dtype=int)
-            
+            # Format within json    
+            # bbox_coords = np.float32([
+            #     [x_min, y_min],
+            #     [x_min, y_max],
+            #     [x_max, y_max],
+            #     [x_max, y_min],
+            # ])
 
             warped_img, new_bbox, matrix = perspective_warp(img, bbox_coords)
 
@@ -112,8 +112,7 @@ if __name__ == "__main__":
     input_dir = args.input_dir
     output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
-    bbox_csv_dir = args.bbox_csv_dir
-    bbox_csv = pd.read_csv(bbox_csv_dir)
-    print(bbox_csv["image_name"])
+    bbox_json_dir = args.bbox_json_dir
+    bbox_df = pd.read_json(bbox_json_dir)
 
-    perspective_warp_all(input_dir, output_dir, bbox_csv)
+    perspective_warp_all(input_dir, output_dir, bbox_df)
