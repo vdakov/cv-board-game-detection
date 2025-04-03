@@ -1,1 +1,0 @@
-__all__ = ['board_mining']
