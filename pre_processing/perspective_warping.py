@@ -13,19 +13,19 @@ def parse_args():
         "--input_dir",
         help="Enter the path to the directory with the images on which perspective distortion will be applied.",
         type=str,
-        default="data/full/mined_synthetic_boards_blended",
+        default="pre_processing/data/output/synthetic_boards_blended",
     )
     parser.add_argument(
         "--output_dir",
         help="Input the path to the directory where the output of the distorted images will be stored.",
         type=str,
-        default="data/full/perspective_distorted_boards",
+        default="pre_processing/data/output/perspective_distorted_boards",
     )
     parser.add_argument(
         "--bbox_json_dir",
         help="Input the path to the directory where the bounding boxes of the original boards are.",
         type=str,
-        default="data/full/mined_synthetic_boards_blended/bboxes.json",
+        default="pre_processing/data/input/synthetic_boards_blended/bboxes.json",
     )
     args = parser.parse_args()
     return args

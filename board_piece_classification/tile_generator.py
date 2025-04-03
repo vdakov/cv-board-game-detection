@@ -147,10 +147,10 @@ def img_to_tensor(img, img_size):
 if __name__ == "__main__":
 
     font_path = "C:/Windows/Fonts/georgia.ttf"  # add a path to your own font
-    tile_bgs_path = "../data/tile_datasets/hexagons"
-    output_img_path = "../data/full/generated_synthetic_tiles"
-    output_ds_path = "../data/full/compiled_dataset"
-    backgrounds_path = "../data/tile_datasets/tile_backgrounds"
+    tile_bgs_path = "data/shared/tile_datasets/hexagons"
+    output_img_path = "board_piece_classification/data/output/generated_synthetic_tiles"
+    output_ds_path = "board_piece_classification/data/output/compiled_dataset"
+    backgrounds_path = "data/shared/tile_datasets/tile_backgrounds"
 
     tile_types = ["brick", "desert", "sheep", "ore", "wheat", "lumber"]
     valid_numbers = ["2", "3", "4", "5", "6", "8", "9", "10", "11", "12"]

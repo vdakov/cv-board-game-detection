@@ -102,10 +102,10 @@ def get_labeled_hexagons(
 
 if __name__ == "__main__":
 
-    tile_img_folder = "../data/full/mined_synthetic_tiles"
-    mask_folder = "../data/tile_masks"
-    ref_img_folder = "../data/sample/synthetic_reference_tiles"
-    output_path = "../data/full/compiled_dataset"
+    tile_img_folder = "board_segmentation/data/output/mined_synthetic_tiles"
+    mask_folder = "board_piece_classification/data/input/tile_masks"
+    ref_img_folder = "board_piece_classification/data/input/synthetic_reference_tiles"
+    output_path = "board_piece_classification/data/output/compiled_dataset"
     resize_shape = (135, 121)
 
     # Get masked hexagons

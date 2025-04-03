@@ -4,16 +4,15 @@ import cv2
 import random
 
 # Paths
-data_dir = "data/full/mined_synthetic_boards_blended"
+data_dir = "pre_processing/data/output/synthetic_boards_blended"
 json_file = os.path.join(data_dir, "bboxes.json")
-output_dir = os.path.join(data_dir)
+output_dir = "board_detection/data/input"
 train_dir = os.path.join(output_dir, "train")
 val_dir = os.path.join(output_dir, "val")
 train_images_dir = os.path.join(train_dir, "images")
 val_images_dir = os.path.join(val_dir, "images")
 train_labels_dir = os.path.join(train_dir, "labels")
 val_labels_dir = os.path.join(val_dir, "labels")
-
 data_yaml_path = os.path.join(output_dir, "data.yaml")
 
 # Ensure output directories exist

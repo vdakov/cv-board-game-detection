@@ -196,13 +196,15 @@ if __name__ == "__main__":
     epochs = 100  # the maximum number of epochs used to train the model
     validation_split = 0.2
     test_split = 0.1
-    path_to_predict = "../data/sample/test1.png"
+    path_to_predict = "board_piece_classification/data/input/test1.png"
     model_save_path = (
-        "../board_piece_classification/model/tile_detector_hexagons2.keras"
+        "board_piece_classification/data/models/tile_detector_hexagons2.keras"
     )
-    dataset_path = "../data/full/compiled_dataset/synthetic_dataset_hexagons.pkl"
+    dataset_path = (
+        "board_piece_classification/data/input/synthetic_dataset_hexagons.pkl"
+    )
     label_encoder_path = (
-        "../data/full/compiled_dataset/label_encoder/label_encoder_hexagons.pkl"
+        "board_piece_classification/data/models/label_encoder_hexagons.pkl"
     )
 
     ##### DATASET PRE-PROCESSING #####

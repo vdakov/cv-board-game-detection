@@ -26,7 +26,9 @@ def preprocess_image(img, zoom, threshold):
     return img
 
 
-img_path = "../data/full/generated_synthetic_tiles/bg_0_brick_6.png"
+img_path = (
+    "board_piece_classification/data/output/generated_synthetic_tiles/bg_0_brick_6.png"
+)
 
 img1 = np.array(preprocess_image(Image.open(img_path), 3.5, 85))
 text = pytesseract.image_to_string(img1, config="--psm 3")

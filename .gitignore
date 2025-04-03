@@ -170,11 +170,12 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-data/full/
 myenv
 cv_venv
-board_segmentation/sam_checkpoint/sam_vit_h_4b8939.pth 
-board_detection/yolov8n.pt
-board_piece_classification/model
-data/tables
-runs/models
+
+board_segmentation/sam_checkpoint
+board_piece_classification/models
+
+data/shared
+**/data/output
+**/data/input

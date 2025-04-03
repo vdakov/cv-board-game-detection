@@ -24,13 +24,13 @@ def parse_args():
         "--raw_output_dir",
         help="Input the path to the directory where the raw synthetic catan images will be stored.",
         type=str,
-        default="data/full/mined_synthetic_boards",
+        default="pre_processing/data/output/synthetic_boards",
     )
     parser.add_argument(
         "--blended_output_dir",
         help="Input the path to the directory where the synthetic catan, blended with other synthetic images will be stored.",
         type=str,
-        default="data/full/mined_synthetic_boards_blended",
+        default="pre_processing/data/output/synthetic_boards_blended",
     )
     parser.add_argument(
         "--num_images",
@@ -42,7 +42,7 @@ def parse_args():
         "--tables_dir",
         help="Enter the path to the directory containing background table images",
         type=str,
-        default="data/tables",
+        default="data/shared/tables",
     )
     parser.add_argument(
         "--catan_randomizer_dir",

@@ -16,25 +16,25 @@ def get_args():
         "--img_path",
         help="Input the path to your image here.",
         type=str,
-        default="data/sample/mined_synthetic_boards_sample/canvas_image_0.png",
+        default="data/input/canvas_image_0.png",
     )
     parser.add_argument(
         "--hexagon_detector_path",
         help="Input the path to the model that detects hexagons here.",
         type=str,
-        default="board_piece_classification/model/tile_detector_hexagons2.keras",
+        default="board_piece_classification/data/models/tile_detector_hexagons2.keras",
     )
     parser.add_argument(
         "--hexagon_label_encoder_path",
         help="Input the path to the label encoder associated with the hexagon detector here.",
         type=str,
-        default="data/full/compiled_dataset/label_encoder/label_encoder_hexagons.pkl",
+        default="board_piece_classification/data/models/label_encoder_hexagons.pkl",
     )
     parser.add_argument(
         "--output_path",
         help="Path to save the assembled board JSON file.",
         type=str,
-        default="data/output/board.json",
+        default="data/board.json",
     )
     return parser.parse_args()
 
