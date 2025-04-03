@@ -5,7 +5,9 @@ import numpy as np
 import os
 import cv2 
 from sklearn.cluster import DBSCAN
+from pathlib import Path
 from sklearn.preprocessing import StandardScaler
+import urllib.request
 
 
 def cluster_masks(anns, min_samples=3, eps=0.5):
@@ -73,8 +75,14 @@ def show_anns(original, anns, cluster=False):
 if __name__ == "__main__":
     args = get_args()
     im_folder = args.board_directory
-    sam_checkpoint = sam_model_registry["vit_h"](checkpoint=args.sam_checkpoint_path)
-    mask_generator = SamAutomaticMaskGenerator(sam_checkpoint)
+
+    sam_checkpoint = Path(args.sam_checkpoint_path)
+    if not sam_checkpoint.is_file():
+        print("Segment Anything Model not found. Downloading...")
+        urllib.request.urlretrieve("https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth", sam_checkpoint)
+    sam = sam_model_registry["vit_h"](checkpoint=sam_checkpoint)
+    mask_generator = SamAutomaticMaskGenerator(sam)
+
     for i in range(1):
         image_path = f"{im_folder}/canvas_image_{i}.png"
         img = cv2.imread(image_path)
