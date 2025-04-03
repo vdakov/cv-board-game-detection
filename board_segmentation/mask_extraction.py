@@ -26,8 +26,8 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sam_checkpoint_path", help="Echo the path to the SAM checkpoint here.", type=str, default="sam_checkpoint/sam_vit_h_4b8939.pth")
     parser.add_argument("--model_name", help="Echo the name of the model you want to use", type=str, default="vit_h")
-    parser.add_argument("--board_directory", help="Echo the path to the directory with the board images", type=str, default="../catan_data/mined_synthetic_boards_sample/")
-    parser.add_argument("--save_dir", help="Echo the path to the directory where you want your hexagons saved", type=str, default="../catan_data/mined_synthetic_tiles_sample/")
+    parser.add_argument("--board_directory", help="Echo the path to the directory with the board images", type=str, default="../data/full/mined_synthetic_boards_blended/")
+    parser.add_argument("--save_dir", help="Echo the path to the directory where you want your hexagons saved", type=str, default="../data/full/mined_synthetic_tiles_blended/")
     args = parser.parse_args()
     return args
 
@@ -62,11 +62,11 @@ def show_anns(original, anns, cluster=False):
                 cluster_img[m, :] = cluster_colors[cluster_label]
 
 
-    ax[0].imshow(original)
-    ax[1].imshow(img)
-    ax[2].imshow(cluster_img)
-    plt.axis('off')
-    plt.show()
+    # ax[0].imshow(original)
+    # ax[1].imshow(img)
+    # ax[2].imshow(cluster_img)
+    # plt.axis('off')
+    # plt.show()
 
     return cluster_img
 
@@ -75,8 +75,11 @@ if __name__ == "__main__":
     im_folder = args.board_directory
     sam_checkpoint = sam_model_registry["vit_h"](checkpoint=args.sam_checkpoint_path)
     mask_generator = SamAutomaticMaskGenerator(sam_checkpoint)
-    for i in range(1):
-        image_path = f"{im_folder}/canvas_image_{i}.png"
+    for i in range(201):
+        image_path = f"{im_folder}canvas_image_{i}.png"
+
+        print(f'Reached image at path: {image_path}')
+
         img = cv2.imread(image_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)    
         img = cv2.GaussianBlur(img, (5, 5), 0)
@@ -116,7 +119,7 @@ if __name__ == "__main__":
             x, y, w, h = cv2.boundingRect(hexagon)  # Get bounding box
             hex_crop = img[y:y+h, x:x+w]  # Crop the region
 
-            save_path = os.path.join(args.save_dir, f"hexagon_{idx}.png")
+            save_path = os.path.join(args.save_dir, f"canvas_image_{i}_hexagon_{idx}.png")
             cv2.imwrite(save_path, cv2.cvtColor(hex_crop, cv2.COLOR_RGB2BGR))  # Save the hexagon
             
 

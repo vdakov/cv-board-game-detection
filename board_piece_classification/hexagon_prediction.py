@@ -17,7 +17,6 @@ def predict_hexagons(model, sample, label_encoder, img_size):
     img_np = img_np.numpy()
 
     pred = model.predict(img_np)
-    print(pred)
 
     pred_label = label_encoder.inverse_transform([np.argmax(pred)])
 
@@ -64,16 +63,12 @@ def predict_image(img_path, models, label_encoder, IMG_SIZE):
 
 if __name__ == '__main__':
 
-    model_path = 'model/tile_detector_hexagons.keras'
-    model_path2 = 'model/tile_detector_hexagons2.keras'
+    model_path = 'model/tile_detector_hexagons_mined.keras'
     img_folder_path = '../data/sample/mined_synthetic_tiles_sample'
-    label_encoder_path = '../data/full/compiled_dataset/label_encoder/label_encoder_hexagons.pkl'
-    IMG_SIZE = (243, 256, 3)
+    label_encoder_path = '../data/full/compiled_dataset/label_encoder/label_encoder.pkl'
+    IMG_SIZE = (100, 100, 3)
 
-    model = keras.models.load_model(model_path)
-    model2 = keras.models.load_model(model_path2)
-
-    models = model
+    model = keras.models.load_model(model_path)\
 
     with open(label_encoder_path, 'rb') as f:
         label_encoder = pickle.load(f)
@@ -81,6 +76,6 @@ if __name__ == '__main__':
     for i in range(0, 19):
         img_path = f'{img_folder_path}/hexagon_{i}.png'
 
-        hex_label, number_label = predict_image(img_path, models, label_encoder, IMG_SIZE)
+        hex_label, number_label = predict_image(img_path, model, label_encoder, IMG_SIZE)
 
         print(f'Hex at path {img_path} is of type {hex_label} - {number_label}')

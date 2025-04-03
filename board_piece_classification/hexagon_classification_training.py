@@ -148,7 +148,7 @@ if __name__ == "__main__":
     ##### PARAMETER DEFINITION #####
 
     #Downsample all images for faster training
-    IMG_SIZE = (243, 256, 3)
+    IMG_SIZE = (100, 100, 3)
     digit_size = (100, 100, 3)
     BATCH_SIZE = 32
     NUM_CLASSES = 6  # there are six tile types in Catan
@@ -156,9 +156,9 @@ if __name__ == "__main__":
     validation_split = 0.2
     test_split = 0.1
     path_to_predict = '../data/sample/test1.png'
-    model_save_path = '../board_piece_classification/model/tile_detector_hexagons2.keras'
-    dataset_path = '../data/full/compiled_dataset/synthetic_dataset_hexagons.pkl'
-    label_encoder_path = '../data/full/compiled_dataset/label_encoder/label_encoder_hexagons.pkl'
+    model_save_path = '../board_piece_classification/model/tile_detector_hexagons_mined.keras'
+    dataset_path = '../data/full/compiled_dataset/mined_synthetic_dataset.pkl'
+    label_encoder_path = '../data/full/compiled_dataset/label_encoder/label_encoder.pkl'
 
     ##### DATASET PRE-PROCESSING #####
 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     # This will also plot the train and validation accuracies
     model = model_training(model, train_set, validation_set, epochs)
 
-    # model.save(model_save_path)
+    model.save(model_save_path)
     print(f'Trained model saved at: {model_save_path}')
 
     ##### TESTING THE MODEL #####
