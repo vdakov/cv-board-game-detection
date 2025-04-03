@@ -61,11 +61,15 @@ def assemble_board(classified_hexagons, hex_positions=None):
     This function takes the classified hexagons and creates a structured board representation
     with proper hex grid coordinates and adjacency information based on the standard Catan board layout.
 
-    @param classified_hexagons: Dictionary containing hexagon IDs ('hex_id'), their types ('hex_label'), and number labels ('number_label')
-    @param hex_positions: List of (x, y) coordinates representing the centers of each hexagon.
-        If None, will use a predefined layout for standard Catan boards.
+    Args:
+        classified_hexagons: Dictionary containing hexagon IDs ('hex_id'), their types ('hex_label'),
+                             and number labels ('number_label')
+        hex_positions: List of (x, y) coordinates representing the centers of each hexagon.
+                       If None, will use a predefined layout for standard Catan boards.
 
-    @return: Dictionary representing the complete board with adjacency information, grid coordinates, and resource distribution statistics.
+    Returns:
+        Dictionary representing the complete board with adjacency information, grid coordinates,
+        and resource distribution statistics.
     """
     # Guard
     if not classified_hexagons or "hex_id" not in classified_hexagons:

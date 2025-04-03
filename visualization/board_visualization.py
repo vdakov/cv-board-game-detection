@@ -58,7 +58,9 @@ adjacency_map = {
 def visualize_board(board):
     """
     Visualize the Catan board with resource types and numbers.
-    @param board: The board dictionary created by assemble_board
+    Args:
+        board: Dictionary of the board, containing resource distribution and hex_data
+            (a mapping hex_id to hex_data - type, number, position)
     """
     # Guard
     if not board or "hexagons" not in board:
