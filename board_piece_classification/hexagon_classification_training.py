@@ -182,7 +182,7 @@ if __name__ == "__main__":
     # This will also plot the train and validation accuracies
     model = model_training(model, train_set, validation_set, epochs)
 
-    model.save(model_save_path)
+    # model.save(model_save_path)
     print(f'Trained model saved at: {model_save_path}')
 
     ##### TESTING THE MODEL #####

@@ -11,7 +11,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     parser.add_argument("--img_path", help="Input the path to your image here.", type=str, default="data/sample/mined_synthetic_boards_sample/canvas_image_0.png")
-    parser.add_argument("--hexagon_detector_path", help="Input the path to the model that detects hexagons here.", type=str, default="board_piece_classification/model/tile_detector_hexagons2.keras")
+    parser.add_argument("--hexagon_detector_path", help="Input the path to the model that detects hexagons here.", type=str, default="board_piece_classification/model/tile_detector_hexagons.keras")
     parser.add_argument("--hexagon_label_encoder_path", help="Input the path to the label encoder associated with the hexagon detector here.", type=str, default="data/full/compiled_dataset/label_encoder/label_encoder_hexagons.pkl")
     return args
 
@@ -21,7 +21,7 @@ def detect_and_perspective_correct_board(IMG_PATH):
 def extract_hexagons(board_image):
     pass
 
-def classifiy_hexagon_types(hexagon_image_folder):
+def classifiy_hexagons(hexagon_image_folder):
     """"
     Classify the hexagons as well as th numbers inside of them.
     @:param image_folder: The folder containing images of hexagons to be classified.
@@ -75,8 +75,7 @@ if __name__ == "__main__":
     IMG_PATH = args.img_path
     board_image = detect_and_perspective_correct_board(IMG_PATH)
     hexagons = extract_hexagons(board_image)
-    classified_hexagons = classifiy_hexagon_types(hexagons)
-    classified_hexagons_with_numbers = assign_numbers_to_hexagons(classified_hexagons)
+    classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
     board = assemble_board(classified_hexagons_with_numbers)
     visualize_board(board)
 

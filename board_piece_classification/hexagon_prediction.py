@@ -73,7 +73,7 @@ if __name__ == '__main__':
     model = keras.models.load_model(model_path)
     model2 = keras.models.load_model(model_path2)
 
-    models = [model, model2]
+    models = model
 
     with open(label_encoder_path, 'rb') as f:
         label_encoder = pickle.load(f)
