@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class PhotometricLoss(nn.Module):
     def __init__(self):
         super(PhotometricLoss, self).__init__()
-
 
     def forward(self, H_pred, H_true, I):
         """
@@ -41,7 +41,9 @@ class PhotometricLoss(nn.Module):
             # Create a meshgrid of pixel coordinates (in the original image coordinate system)
             xs = torch.linspace(0, width - 1, width, device=device)
             ys = torch.linspace(0, height - 1, height, device=device)
-            grid_y, grid_x = torch.meshgrid(ys, xs, indexing='ij')  # grid_y: (H, W), grid_x: (H, W)
+            grid_y, grid_x = torch.meshgrid(
+                ys, xs, indexing="ij"
+            )  # grid_y: (H, W), grid_x: (H, W)
 
             # Flatten the grid and add homogeneous coordinate 1
             ones = torch.ones_like(grid_x)
@@ -73,8 +75,12 @@ class PhotometricLoss(nn.Module):
         grid_true = build_perspective_grid(H_true_inv, H, W)
 
         # Warp the image using the perspective grids
-        I_pred_warped = F.grid_sample(I, grid_pred, mode='bilinear', padding_mode='zeros', align_corners=False)
-        I_true_warped = F.grid_sample(I, grid_true, mode='bilinear', padding_mode='zeros', align_corners=False)
+        I_pred_warped = F.grid_sample(
+            I, grid_pred, mode="bilinear", padding_mode="zeros", align_corners=False
+        )
+        I_true_warped = F.grid_sample(
+            I, grid_true, mode="bilinear", padding_mode="zeros", align_corners=False
+        )
 
         # Compute the photometric loss (mean squared error between warped images)
         photometric_loss = F.mse_loss(I_pred_warped, I_true_warped)

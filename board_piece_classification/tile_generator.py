@@ -7,9 +7,11 @@ import pickle
 import os
 import sys
 
+
 def save_to_file(file_path, obj):
-    with open(file_path, 'wb') as f:
+    with open(file_path, "wb") as f:
         pickle.dump(obj, f)
+
 
 def preprocess_image(img, zoom, final_size):
     w, h = img.size
@@ -20,29 +22,29 @@ def preprocess_image(img, zoom, final_size):
 
     zoom2 = zoom * 2
 
-    img = img.crop((x - w / zoom2, y - h / zoom2,
-                    x + w / zoom2, y + h / zoom2))
+    img = img.crop((x - w / zoom2, y - h / zoom2, x + w / zoom2, y + h / zoom2))
 
-    img = img.resize(final_size).convert('RGB')
+    img = img.resize(final_size).convert("RGB")
 
     return img
 
+
 def to_tf_datasets(ds_dict, output_path):
-    hex_input = [x.numpy() for x in ds_dict['hex_tensor']]
-    number_input = [x.numpy() for x in ds_dict['number_tensor']]
-    hex_labels = ds_dict['img_label_hexagon']
-    no_labels = ds_dict['img_label_number']
+    hex_input = [x.numpy() for x in ds_dict["hex_tensor"]]
+    number_input = [x.numpy() for x in ds_dict["number_tensor"]]
+    hex_labels = ds_dict["img_label_hexagon"]
+    no_labels = ds_dict["img_label_number"]
 
     # Encode the hexes' labels and save them to file
     hex_encoder = LabelEncoder()
     y_hexagons_encoded = hex_encoder.fit_transform(hex_labels)
-    hex_encoder_path = f'{output_path}/label_encoder/label_encoder_hexagons.pkl'
+    hex_encoder_path = f"{output_path}/label_encoder/label_encoder_hexagons.pkl"
     save_to_file(hex_encoder_path, hex_encoder)
 
     # Encode the number labels and save them to file
     no_encoder = LabelEncoder()
     y_numbers_encoded = no_encoder.fit_transform(no_labels)
-    number_encoder_path = f'{output_path}/label_encoder/label_encoder_numbers.pkl'
+    number_encoder_path = f"{output_path}/label_encoder/label_encoder_numbers.pkl"
     save_to_file(number_encoder_path, no_encoder)
 
     # Convert to TensorFlow tensors
@@ -51,10 +53,10 @@ def to_tf_datasets(ds_dict, output_path):
     y_hexagons = tf.convert_to_tensor(y_hexagons_encoded, dtype=tf.int32)
     y_numbers = tf.convert_to_tensor(y_numbers_encoded, dtype=tf.int32)
 
-    print('Compiled datasets; preparing to store')
+    print("Compiled datasets; preparing to store")
 
-    save_path_hexagons = f'{output_path}/synthetic_dataset_hexagons.pkl'
-    save_path_numbers = f'{output_path}/synthetic_dataset_numbers.pkl'
+    save_path_hexagons = f"{output_path}/synthetic_dataset_hexagons.pkl"
+    save_path_numbers = f"{output_path}/synthetic_dataset_numbers.pkl"
 
     save_to_file(save_path_hexagons, (X_hex, y_hexagons))
     save_to_file(save_path_numbers, (X_no, y_numbers))
@@ -81,7 +83,7 @@ def draw_number_plate(img, number, font_path):
         ],
         fill=circle_color,
         outline=outline_color,
-        width=9
+        width=9,
     )
 
     try:
@@ -98,34 +100,38 @@ def draw_number_plate(img, number, font_path):
     text_position = (circle_center[0] - text_width // 2, circle_center[1] - text_height)
 
     # Draw text (black or bright red depending on the piece)
-    if number_text == '8' or number_text == '6':
-        fill_color = 'red'
+    if number_text == "8" or number_text == "6":
+        fill_color = "red"
     else:
-        fill_color = 'black'
+        fill_color = "black"
 
     draw.text(text_position, number_text, font=font, fill=fill_color)
 
     return img
 
-def generate_tile_image(image_path, bg_path, number=None, font_path=None, tile_type='desert'):
+
+def generate_tile_image(
+    image_path, bg_path, number=None, font_path=None, tile_type="desert"
+):
     # Load the background image
-    img = Image.open(image_path).convert('RGBA')
+    img = Image.open(image_path).convert("RGBA")
 
     # Desert tiles do not have a number on them
-    if tile_type == 'desert':
-        bg = Image.open(bg_path).convert('RGBA')
+    if tile_type == "desert":
+        bg = Image.open(bg_path).convert("RGBA")
         bg = bg.resize(img.size)
-        combined = Image.alpha_composite(bg, img).convert('RGB')
+        combined = Image.alpha_composite(bg, img).convert("RGB")
 
         return combined
 
     img = draw_number_plate(img, number, font_path)
 
-    bg = Image.open(bg_path).convert('RGBA')
+    bg = Image.open(bg_path).convert("RGBA")
     bg = bg.resize(img.size)
-    combined = Image.alpha_composite(bg, img).convert('RGB')
+    combined = Image.alpha_composite(bg, img).convert("RGB")
 
     return combined
+
 
 def img_to_tensor(img, img_size):
     transform = ToTensor()
@@ -137,47 +143,48 @@ def img_to_tensor(img, img_size):
 
     return resized_img
 
-if __name__ == '__main__':
 
-    font_path = 'C:/Windows/Fonts/georgia.ttf' # add a path to your own font
-    tile_bgs_path = '../data/tile_datasets/hexagons'
-    output_img_path = '../data/full/generated_synthetic_tiles'
-    output_ds_path = '../data/full/compiled_dataset'
-    backgrounds_path = '../data/tile_datasets/tile_backgrounds'
+if __name__ == "__main__":
 
-    tile_types = ['brick', 'desert', 'sheep', 'ore', 'wheat', 'lumber']
-    valid_numbers = ['2', '3', '4', '5', '6', '8', '9', '10', '11', '12']
+    font_path = "C:/Windows/Fonts/georgia.ttf"  # add a path to your own font
+    tile_bgs_path = "../data/tile_datasets/hexagons"
+    output_img_path = "../data/full/generated_synthetic_tiles"
+    output_ds_path = "../data/full/compiled_dataset"
+    backgrounds_path = "../data/tile_datasets/tile_backgrounds"
+
+    tile_types = ["brick", "desert", "sheep", "ore", "wheat", "lumber"]
+    valid_numbers = ["2", "3", "4", "5", "6", "8", "9", "10", "11", "12"]
     backgrounds = os.listdir(backgrounds_path)
 
     img_size = (243, 256)
     digit_size = (100, 100)
-    zoom_to_digit = 3 # factor by which to zoom in to the tile number
-    threshold = 85 # used to threshold tile image to obtain digit only
+    zoom_to_digit = 3  # factor by which to zoom in to the tile number
+    threshold = 85  # used to threshold tile image to obtain digit only
 
     final_dict = {
-        'img_path': [],
-        'hex_tensor': [],
-        'number_tensor': [],
-        'img_label_hexagon': [],
-        'img_label_number': []
+        "img_path": [],
+        "hex_tensor": [],
+        "number_tensor": [],
+        "img_label_hexagon": [],
+        "img_label_number": [],
     }
 
     bg_index = 0
     for background in backgrounds:
 
-        bg_path = f'{backgrounds_path}/{background}'
+        bg_path = f"{backgrounds_path}/{background}"
 
-        print(f'Reached background image {bg_index} of {len(backgrounds)}')
+        print(f"Reached background image {bg_index} of {len(backgrounds)}")
 
         for tile in tile_types:
-            img_path = f'{tile_bgs_path}/{tile}.png'
+            img_path = f"{tile_bgs_path}/{tile}.png"
 
             for number in valid_numbers:
                 # Generate image
                 img = generate_tile_image(img_path, bg_path, number, font_path, tile)
 
                 # Save image
-                img.save(f'{output_img_path}/bg_{bg_index}_{tile}_{number}.png')
+                img.save(f"{output_img_path}/bg_{bg_index}_{tile}_{number}.png")
 
                 digit = preprocess_image(img, zoom_to_digit, digit_size)
 
@@ -185,16 +192,16 @@ if __name__ == '__main__':
                 final_digit = img_to_tensor(digit, digit_size)
 
                 # Save relevant information to dictionary
-                final_dict['img_path'].append(img_path)
-                final_dict['hex_tensor'].append(final_img)
-                final_dict['number_tensor'].append(final_digit)
-                final_dict['img_label_hexagon'].append(tile)
-                final_dict['img_label_number'].append(number)
+                final_dict["img_path"].append(img_path)
+                final_dict["hex_tensor"].append(final_img)
+                final_dict["number_tensor"].append(final_digit)
+                final_dict["img_label_hexagon"].append(tile)
+                final_dict["img_label_number"].append(number)
 
         bg_index += 1
 
-    print('Synthetic samples obtained')
+    print("Synthetic samples obtained")
 
     to_tf_datasets(final_dict, output_ds_path)
 
-    print('Synthetic samples saved to pickle dataset')
+    print("Synthetic samples saved to pickle dataset")
