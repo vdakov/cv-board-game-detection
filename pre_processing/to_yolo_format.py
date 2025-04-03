@@ -4,8 +4,8 @@ import cv2
 import random
 
 # Paths
-data_dir = "data/full/perspective_distorted_boards"
-json_file = os.path.join(data_dir, "bbox_coordinates.json")
+data_dir = "data/full/mined_synthetic_boards_blended"
+json_file = os.path.join(data_dir, "bboxes.json")
 output_dir = os.path.join(data_dir)
 train_dir = os.path.join(output_dir, "train")
 val_dir = os.path.join(output_dir, "val")

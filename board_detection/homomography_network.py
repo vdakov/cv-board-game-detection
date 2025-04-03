@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+# Inspired by: Deep Image Homography Estimation - https://arxiv.org/abs/1606.03798
+
 class HomographyNet(nn.Module):
     def __init__(self, output_dim=9):
         """

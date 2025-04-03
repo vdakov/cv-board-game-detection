@@ -4,6 +4,7 @@ import numpy as np
 import cv2 
 import matplotlib.pyplot as plt
 import torch 
+from board_detection.homography_loss import PhotometricLoss
 from data.torch_data_loaders.homography_dataset import HomographyDataset
 from visualization import utils
 from tqdm import tqdm
@@ -67,7 +68,12 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs, device, s
             inputs, labels = inputs.to(device), labels.to(device)
 
             outputs = model(inputs)
-            loss = criterion(outputs, labels)
+
+            if isinstance(criterion, PhotometricLoss):
+                loss = criterion(outputs, labels, inputs)
+            else:
+                loss = criterion(outputs, labels)
+            
 
             optimizer.zero_grad()
             loss.backward()
@@ -100,7 +106,10 @@ def calculate_test_loss(model, test_loader, criterion, device):
         inputs, labels = inputs.to(device), labels.to(device)
 
         outputs = model(inputs)
-        loss = criterion(outputs, labels)
+        if isinstance(criterion, PhotometricLoss):
+            loss = criterion(outputs, labels, inputs)
+        else:
+            loss = criterion(outputs, labels)
         running_loss += loss.item()
 
     test_loss = running_loss / len(test_loader.dataset)
