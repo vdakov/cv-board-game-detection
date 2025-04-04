@@ -4,16 +4,15 @@ import cv2
 import random
 
 # Paths
-data_dir = "data/full/mined_synthetic_boards_blended"
+data_dir = "pre_processing/data/output/synthetic_boards_blended"
 json_file = os.path.join(data_dir, "bboxes.json")
-output_dir = os.path.join(data_dir)
+output_dir = "board_detection/data/input"
 train_dir = os.path.join(output_dir, "train")
 val_dir = os.path.join(output_dir, "val")
 train_images_dir = os.path.join(train_dir, "images")
 val_images_dir = os.path.join(val_dir, "images")
 train_labels_dir = os.path.join(train_dir, "labels")
 val_labels_dir = os.path.join(val_dir, "labels")
-
 data_yaml_path = os.path.join(output_dir, "data.yaml")
 
 # Ensure output directories exist
@@ -33,20 +32,21 @@ split_idx = int(0.8 * len(image_names))
 train_images = image_names[:split_idx]
 val_images = image_names[split_idx:]
 
+
 def process_images(image_list, images_output_dir, labels_output_dir):
     for img_name in image_list:
         img_name_no_ext = os.path.splitext(img_name)[0]
         label_path = os.path.join(labels_output_dir, f"{img_name_no_ext}.txt")
         img_src_path = os.path.join(data_dir, img_name)
         img_dest_path = os.path.join(images_output_dir, img_name)
-        
+
         # Load the image using OpenCV to get its dimensions
         img = cv2.imread(img_src_path)
-        
+
         if img is None:
             print(f"Warning: Could not read image {img_name}")
             continue
-        
+
         img_height, img_width, _ = img.shape  # height, width, channels
         bbox = annotations[img_name]
 
@@ -76,10 +76,13 @@ def process_images(image_list, images_output_dir, labels_output_dir):
             height /= img_height
 
             # Write to file
-            label_file.write(f"0 {x_center} {y_center} {width} {height}\n")  # Assuming class name "
-        
+            label_file.write(
+                f"0 {x_center} {y_center} {width} {height}\n"
+            )  # Assuming class name "
+
         # Copy image to corresponding folder
         cv2.imwrite(img_dest_path, img)
+
 
 # Process train and validation sets
 process_images(train_images, train_images_dir, train_labels_dir)
