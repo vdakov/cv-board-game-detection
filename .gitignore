@@ -177,6 +177,8 @@ myenv
 cv_venv
 
 **/data/*/**
+runs/**
+!runs/models
 
 !data/sample/
 !data/sample/**
@@ -185,8 +187,6 @@ cv_venv
 !**/.keep
 
 !board_detection/data/models/*
-!board_detection/data/input/torch_data_loaders/
-!board_detection/data/input/torch_data_loaders/**
 !board_detection/data/input/runs/
 !board_detection/data/input/runs/**
 

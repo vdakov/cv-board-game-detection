@@ -46,6 +46,7 @@ def search_for_object(img_path, model, class_id):
 
 def board_detection_step(img_path, model, show_results=True, ground_truth_bbox=None):
     """Runs the full detection pipeline and plots results."""
+    class_id_to_find = 0
     img, results = search_for_object(img_path, model, class_id_to_find)
 
     if results and hasattr(results[0], "boxes") and len(results[0].boxes) > 0:

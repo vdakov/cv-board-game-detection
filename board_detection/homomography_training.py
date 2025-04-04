@@ -5,7 +5,7 @@ import cv2
 import matplotlib.pyplot as plt
 import torch
 from board_detection.homography_loss import PhotometricLoss
-from data.input.torch_data_loaders.homography_dataset import HomographyDataset
+from board_detection.homography_dataset import HomographyDataset
 from visualization import utils
 from tqdm import tqdm
 

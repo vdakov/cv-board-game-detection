@@ -25,7 +25,7 @@ def parse_args():
         "--bbox_json_dir",
         help="Input the path to the directory where the bounding boxes of the original boards are.",
         type=str,
-        default="pre_processing/data/input/synthetic_boards_blended/bboxes.json",
+        default="pre_processing/data/output/synthetic_boards_blended/bboxes.json",
     )
     args = parser.parse_args()
     return args
