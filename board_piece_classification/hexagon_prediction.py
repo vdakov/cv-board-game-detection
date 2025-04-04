@@ -8,9 +8,10 @@ import pickle
 import pytesseract
 import re
 
+
 def predict_hexagons(model, sample, label_encoder, img_size):
     # Read the image
-    img = Image.open(sample).convert('RGB')
+    img = Image.open(sample).convert("RGB")
     img_np = ToTensor()(img)
     img_np = torch.nn.functional.interpolate(img_np.unsqueeze(0), size=img_size[:2])
     img_np = img_np.permute(0, 2, 3, 1)
@@ -22,6 +23,7 @@ def predict_hexagons(model, sample, label_encoder, img_size):
 
     return pred_label
 
+
 def preprocess_image(img, zoom, threshold):
     w, h = img.size
 
@@ -31,24 +33,24 @@ def preprocess_image(img, zoom, threshold):
 
     zoom2 = zoom * 2
 
-    img = img.crop((x - w / zoom2, y - h / zoom2,
-                    x + w / zoom2, y + h / zoom2))
+    img = img.crop((x - w / zoom2, y - h / zoom2, x + w / zoom2, y + h / zoom2))
 
     img = img.resize((200, 200), resample=Resampling.LANCZOS)
 
     # Then keep the number only (so anything that is either black or bright red)
     # and convert the rest to white
-    img = img.convert('L')
+    img = img.convert("L")
     img = img.point(lambda p: 255 if p > threshold else 0)
-    img = img.convert('1')
+    img = img.convert("1")
 
     return img
 
+
 def predict_number(img_path):
     img1 = np.array(preprocess_image(Image.open(img_path), 3.5, 95))
-    text = pytesseract.image_to_string(img1, config='--psm 13')
+    text = pytesseract.image_to_string(img1, config="--psm 13")
 
-    number = [int(s) for s in re.findall(r'\b\d+\b', text)]
+    number = [int(s) for s in re.findall(r"\b\d+\b", text)]
 
     return number[0] if len(number) > 0 else 0
 
@@ -61,21 +63,22 @@ def predict_image(img_path, models, label_encoder, IMG_SIZE):
     return hex_label, number_label
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    model_path = 'model/tile_detector_hexagons_mined.keras'
-    img_folder_path = 'data/output/synthetic_tiles'
-    label_encoder_path = 'data/output/compiled_dataset/label_encoder/label_encoder.pkl'
+    model_path = "model/tile_detector_hexagons_mined.keras"
+    img_folder_path = "data/output/synthetic_tiles"
+    label_encoder_path = "data/output/compiled_dataset/label_encoder/label_encoder.pkl"
     IMG_SIZE = (100, 100, 3)
 
-    model = keras.models.load_model(model_path)\
-
-    with open(label_encoder_path, 'rb') as f:
+    model = keras.models.load_model(model_path)
+    with open(label_encoder_path, "rb") as f:
         label_encoder = pickle.load(f)
 
     for i in range(0, 19):
-        img_path = f'{img_folder_path}/hexagon_{i}.png'
+        img_path = f"{img_folder_path}/hexagon_{i}.png"
 
-        hex_label, number_label = predict_image(img_path, model, label_encoder, IMG_SIZE)
+        hex_label, number_label = predict_image(
+            img_path, model, label_encoder, IMG_SIZE
+        )
 
-        print(f'Hex at path {img_path} is of type {hex_label} - {number_label}')
+        print(f"Hex at path {img_path} is of type {hex_label} - {number_label}")
