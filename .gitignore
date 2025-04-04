@@ -170,6 +170,8 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+.vscode/
+
 # Virtual environments
 myenv
 cv_venv
