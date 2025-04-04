@@ -70,10 +70,10 @@ def visualize_board(board):
     _, ax = plt.subplots(figsize=(10, 8))
     # Colors for different resource types
     resource_colors = {
-        "wood": "forestgreen",
-        "clay": "firebrick",
-        "wool": "lightgreen",
-        "grain": "gold",
+        "lumber": "forestgreen",
+        "brick": "firebrick",
+        "sheep": "lightgreen",
+        "wheat": "gold",
         "ore": "dimgray",
         "desert": "khaki",
     }

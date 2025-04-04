@@ -224,31 +224,32 @@ if __name__ == "__main__":
     # Classify hexagons and assemble the board
     classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
 
-    classified_hexagons_with_numbers = {
-        "hex_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
-        "hex_label": [
-            "grain",
-            "wool",
-            "wood",
-            "grain",
-            "desert",
-            "grain",
-            "wood",
-            "grain",
-            "clay",
-            "clay",
-            "wool",
-            "ore",
-            "wool",
-            "wood",
-            "wool",
-            "ore",
-            "clay",
-            "ore",
-            "wood",
-        ],
-        "number_label": [12, 3, 2, 10, 0, 5, 6, 11, 5, 11, 8, 10, 4, 8, 9, 3, 9, 6, 4],
-    }
+    # classified_hexagons_with_numbers = {
+    #     "hex_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+    #     "hex_label": [
+    #         "wheat",
+    #         "sheep",
+    #         "lumber",
+    #         "wheat",
+    #         "desert",
+    #         "wheat",
+    #         "lumber",
+    #         "wheat",
+    #         "brick",
+    #         "brick",
+    #         "sheep",
+    #         "ore",
+    #         "sheep",
+    #         "lumber",
+    #         "sheep",
+    #         "ore",
+    #         "brick",
+    #         "ore",
+    #         "lumber",
+    #     ],
+    #     "number_label": [12, 3, 2, 10, 0, 5, 6, 11, 5, 11, 8, 10, 4, 8, 9, 3, 9, 6, 4],
+    # }
+
     board = assemble_board(classified_hexagons_with_numbers)
     save_board_to_json(board, output_path)
     visualize_board(board)
