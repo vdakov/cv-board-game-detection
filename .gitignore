@@ -177,16 +177,23 @@ cv_venv
 **/data/*/**
 
 !data/sample/
+!data/sample/**
 !data/shared/
+!data/shared/**
 !**/.keep
 
 !board_detection/data/models/*
-!board_detection/data/input/torch_data_loaders/*
+!board_detection/data/input/torch_data_loaders/
+!board_detection/data/input/torch_data_loaders/**
+!board_detection/data/input/runs/
+!board_detection/data/input/runs/**
 
-!board_piece_classification/data/input/synthetic_reference_tiles/*
-!board_piece_classification/data/input/tile_datasets/*
-!board_piece_classification/data/input/tile_masks/*
+!board_piece_classification/data/input/synthetic_reference_tiles/
+!board_piece_classification/data/input/synthetic_reference_tiles/**
+!board_piece_classification/data/input/tile_datasets/
+!board_piece_classification/data/input/tile_datasets/**
+!board_piece_classification/data/input/tile_masks/
+!board_piece_classification/data/input/tile_masks/**
 !board_piece_classification/data/input/test*
 
-board_segmentation/sam_checkpoint/*
-
+board_segmentation/sam_checkpoint/*.pth
