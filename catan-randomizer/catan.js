@@ -16,19 +16,19 @@ var strokeStyle = "#000000";
 var lineWidth = 3;
 var resourceTypeToColor = {
 	"ore": "#363636",
-	"clay": "#E83200",
-	"wool": "#98E82E",
-	"wood": "#0A7300",
-	"grain": "#E0E000",
+	"brick": "#E83200",
+	"sheep": "#98E82E",
+	"lumber": "#0A7300",
+	"wheat": "#E0E000",
 	"desert": "#F2F0A0",
 	"none": "#ffffff"
 };
 var resourceTypeToImageCanvas = {
 	"ore": [],
-	"clay": [],
-	"wool": [],
-	"wood": [],
-	"grain": [],
+	"brick": [],
+	"sheep": [],
+	"lumber": [],
+	"wheat": [],
 	"desert": []
 };
 
@@ -62,10 +62,10 @@ var catanMap = new CatanMap();
 var normalMap = new MapDefinition();
 normalMap.resourceDict = {
 	"desert": 1,
-	"wood": 4,
-	"clay": 3,
-	"wool": 4,
-	"grain": 4,
+	"lumber": 4,
+	"brick": 3,
+	"sheep": 4,
+	"wheat": 4,
 	"ore": 3
 };
 normalMap.numberDict = {
@@ -91,10 +91,10 @@ normalMap.coordinatesArray = [
 var expandedMap = new MapDefinition();
 expandedMap.resourceDict = {
 	"desert": 2,
-	"wood": 6,
-	"clay": 5,
-	"wool": 6,
-	"grain": 6,
+	"lumber": 6,
+	"brick": 5,
+	"sheep": 6,
+	"wheat": 6,
 	"ore": 5
 }
 expandedMap.numberDict = {
