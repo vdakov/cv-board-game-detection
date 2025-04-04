@@ -1,4 +1,11 @@
 import argparse
+import keras
+import pickle
+from board_piece_classification.hexagon_prediction import predict_image
+from PIL import Image
+import pytesseract
+import os
+import numpy as np
 from PIL import Image
 import os
 import numpy as np
@@ -47,12 +54,42 @@ def extract_hexagons(board_image):
     pass
 
 
-def classifiy_hexagon_types(hexagon_image_folder):
-    pass
+def classifiy_hexagons(hexagon_image_folder):
+    """ "
+    Classify the hexagons as well as th numbers inside of them.
+    @:param image_folder: The folder containing images of hexagons to be classified.
+    @:return A dictionary containing the hexagon ids, the tile label and the number label
+    """
 
+    # reshape to the size expected by the tile detector
+    IMG_SIZE = (243, 256, 3)
 
-def assign_numbers_to_hexagons(classified_hexagons):
-    pass
+    args = get_args()
+
+    # load the hexagon detection model
+    model = keras.models.load_model(args.hexagon_detector_path)
+
+    # load the label encoder for de-coding the hexagon labels
+    with open(args.hexagon_label_encoder_path, "rb") as f:
+        label_encoder = pickle.load(f)
+
+    final_dict = {"hex_id": [], "hex_label": [], "number_label": []}
+
+    hex_id = 1
+    for img in os.listdir(hexagon_image_folder):
+        img_path = f"{hexagon_image_folder}/{img}"
+
+        pred_hex_label, pred_number_label = predict_image(
+            img_path, model, label_encoder, IMG_SIZE
+        )
+
+        final_dict["hex_id"].append(hex_id)
+        final_dict["hex_label"].append(pred_hex_label)
+        final_dict["number_label"].append(pred_number_label)
+
+        hex_id += 1
+
+    return final_dict
 
 
 def assemble_board(classified_hexagons, hex_positions=None):
@@ -185,8 +222,7 @@ if __name__ == "__main__":
         hex_positions = None
 
     # Classify hexagons and assemble the board
-    classified_hexagons = classifiy_hexagon_types(hexagons)
-    classified_hexagons_with_numbers = assign_numbers_to_hexagons(classified_hexagons)
+    classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
 
     classified_hexagons_with_numbers = {
         "hex_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
@@ -213,7 +249,6 @@ if __name__ == "__main__":
         ],
         "number_label": [12, 3, 2, 10, 0, 5, 6, 11, 5, 11, 8, 10, 4, 8, 9, 3, 9, 6, 4],
     }
-
     board = assemble_board(classified_hexagons_with_numbers)
     save_board_to_json(board, output_path)
     visualize_board(board)

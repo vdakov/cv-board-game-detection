@@ -189,7 +189,7 @@ if __name__ == "__main__":
     ##### PARAMETER DEFINITION #####
 
     # Downsample all images for faster training
-    IMG_SIZE = (243, 256, 3)
+    IMG_SIZE = (100, 100, 3)
     digit_size = (100, 100, 3)
     BATCH_SIZE = 32
     NUM_CLASSES = 6  # there are six tile types in Catan

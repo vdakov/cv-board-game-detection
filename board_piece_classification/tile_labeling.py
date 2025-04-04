@@ -7,6 +7,7 @@ import pandas as pd
 import pickle
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
+import os
 
 
 def to_tf_dataset(ds_dict, output_path):
@@ -38,7 +39,7 @@ def get_labeled_hexagons(
     transform = ToTensor()
 
     # Initialize the mask (used for labeling)
-    mask = Image.open(f"{mask_folder}/hexagon_mask.jpg")
+    mask = Image.open(f"{mask_folder}/hexagon_mask.jpg").convert("RGB")
     mask_np = transform(mask)
 
     image_classes = ["brick", "desert", "sheep", "ore", "wheat", "lumber"]
@@ -57,17 +58,12 @@ def get_labeled_hexagons(
         resized_img = interpolate(img_np.unsqueeze(0), resize_shape).squeeze(0)
 
         masked_ref = resized_img * resized_mask
-
-        ref_dict[cls] = masked_ref
+        ref_dict[cls].append(masked_ref)
 
     # Label images
-    for i in range(1002):
-        if i == 955:
-            continue
+    for img_path in os.listdir(tile_img_folder):
 
-        img_path = f"{tile_img_folder}/hexagon_{i}.png"
-
-        img = Image.open(img_path)
+        img = Image.open(f"{tile_img_folder}/{img_path}").convert("RGB")
         img_np = transform(img)
 
         # interpolate to ensure same size
@@ -78,21 +74,21 @@ def get_labeled_hexagons(
 
         mse = np.inf
         final_class = ""
+        closest_ref_index = -1
+
         for cls in image_classes:
-            masked_ref = ref_dict[cls]
+            for j, masked_ref in enumerate(ref_dict[cls]):
+                current_mse = torch.mean(torch.abs(masked_img - masked_ref))
 
-            current_mse = torch.mean((masked_img - masked_ref) ** 2)
-
-            if current_mse < mse:
-                mse = current_mse
-                final_class = cls
+                if current_mse < mse:
+                    mse = current_mse
+                    final_class = cls
+                    closest_ref_index = j + 1
 
         final_dict["img_path"].append(img_path)
         final_dict["img_tensor"].append(resized_img.permute(1, 2, 0))
         final_dict["img_label"].append(final_class)
-
-        if i % 50 == 0:
-            print(f"Reached image: {i}/{1002}")
+        final_dict["closest_ref"].append(f"{final_class}_{closest_ref_index}")
 
     df = pd.DataFrame.from_dict(final_dict)
     df.to_csv(f"{output_path}/labeled_synthetic_samples.csv", index=False)
@@ -106,7 +102,7 @@ if __name__ == "__main__":
     mask_folder = "board_piece_classification/data/input/tile_masks"
     ref_img_folder = "board_piece_classification/data/input/synthetic_reference_tiles"
     output_path = "board_piece_classification/data/output/compiled_dataset"
-    resize_shape = (135, 121)
+    resize_shape = (100, 100)
 
     # Get masked hexagons
     final_dict = get_labeled_hexagons(
