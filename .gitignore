@@ -174,14 +174,11 @@ cython_debug/
 myenv
 cv_venv
 
-data/*
+**/data/*/**
+
 !data/sample/
 !data/shared/
-
 !**/.keep
-
-*/data/
-
 
 !board_detection/data/models/*
 !board_detection/data/input/torch_data_loaders/*
