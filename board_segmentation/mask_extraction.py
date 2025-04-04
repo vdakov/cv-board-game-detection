@@ -30,7 +30,7 @@ def get_args():
         "--sam_checkpoint_path",
         help="Echo the path to the SAM checkpoint here.",
         type=str,
-        default="board_segmentation/sam_checkpoint/sam_vit_h_4b8939.pth",
+        default="board_segmentation/models/sam_vit_h_4b8939.pth",
     )
     parser.add_argument(
         "--model_name",

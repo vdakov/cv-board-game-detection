@@ -197,5 +197,3 @@ runs/**
 !board_piece_classification/data/input/tile_masks/
 !board_piece_classification/data/input/tile_masks/**
 !board_piece_classification/data/input/test*
-
-board_segmentation/sam_checkpoint/*.pth
