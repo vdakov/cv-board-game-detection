@@ -131,8 +131,8 @@ if __name__ == "__main__":
 
     font_path = "C:/Windows/Fonts/georgia.ttf"  # add a path to your own font
     tile_bgs_path = "../catan-randomizer/images"
-    output_img_path = "../data/full/generated_synthetic_tiles_expanded"
-    output_ds_path = "../data/full/compiled_dataset"
+    output_img_path = "data/output/generated_synthetic_tiles_expanded"
+    output_ds_path = "data/output/compiled_dataset"
     backgrounds_path1 = "data/input/tile_datasets/tile_backgrounds/type_1"
     backgrounds_path2 = "data/input/tile_datasets/tile_backgrounds/type_2"
 

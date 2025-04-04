@@ -64,8 +64,8 @@ def predict_image(img_path, models, label_encoder, IMG_SIZE):
 if __name__ == '__main__':
 
     model_path = 'model/tile_detector_hexagons_mined.keras'
-    img_folder_path = '../data/sample/mined_synthetic_tiles_sample'
-    label_encoder_path = '../data/full/compiled_dataset/label_encoder/label_encoder.pkl'
+    img_folder_path = 'data/output/synthetic_tiles'
+    label_encoder_path = 'data/output/compiled_dataset/label_encoder/label_encoder.pkl'
     IMG_SIZE = (100, 100, 3)
 
     model = keras.models.load_model(model_path)\
