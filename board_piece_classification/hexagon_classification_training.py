@@ -67,7 +67,6 @@ def model_predict(model, sample, label_encoder, img_size):
     img_np = img_np.numpy()
 
     pred = model.predict(img_np)
-    print(pred)
 
     pred_label = label_encoder.inverse_transform([np.argmax(pred)])
 
@@ -76,7 +75,7 @@ def model_predict(model, sample, label_encoder, img_size):
 
 def model_training(model, train_set, valid_set, epochs):
     # Stop when the loss does not improve significantly over 3 epochs
-    callback = callbacks.EarlyStopping(monitor="loss", min_delta=0.01, patience=3)
+    callback = callbacks.EarlyStopping(monitor="loss", min_delta=0.01, patience=7)
 
     # Keras expects a batched dataset
     batched_train = train_set.batch(BATCH_SIZE)
@@ -169,7 +168,7 @@ def build_cnn(input_shape):
     )
 
     # Define optimizer
-    optimizer = keras.optimizers.Adam(learning_rate=5e-5, use_ema=True)
+    optimizer = keras.optimizers.Adam(learning_rate=5e-5, use_ema=False)
 
     # Compile the model
     model.compile(
@@ -196,15 +195,15 @@ if __name__ == "__main__":
     epochs = 100  # the maximum number of epochs used to train the model
     validation_split = 0.2
     test_split = 0.1
-    path_to_predict = "board_piece_classification/data/input/test1.png"
+    path_to_predict = "data/input/test1.png"
     model_save_path = (
-        "board_piece_classification/data/models/tile_detector_hexagons2.keras"
+        "data/models/tile_detector_hexagons2.keras"
     )
     dataset_path = (
-        "board_piece_classification/data/input/synthetic_dataset_hexagons.pkl"
+        "data/output/compiled_dataset/synthetic_dataset_hexagons.pkl"
     )
     label_encoder_path = (
-        "board_piece_classification/data/models/label_encoder_hexagons.pkl"
+        "data/models/label_encoder_hexagons.pkl"
     )
 
     ##### DATASET PRE-PROCESSING #####

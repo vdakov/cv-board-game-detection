@@ -28,7 +28,7 @@ def to_tf_dataset(ds_dict, output_path):
     X_tensorflow = tf.convert_to_tensor(input, dtype=tf.float32)
     y_tensorflow = tf.convert_to_tensor(y_encoded, dtype=tf.int32)
 
-    with open(f"{output_path}/mined_synthetic_samples.pkl", "wb") as f:
+    with open(f"{output_path}/synthetic_dataset_hexagons.pkl", "wb") as f:
         pickle.dump((X_tensorflow.numpy(), y_tensorflow.numpy()), f)
 
 
