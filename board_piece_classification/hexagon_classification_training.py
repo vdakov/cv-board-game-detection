@@ -151,7 +151,6 @@ def build_cnn(input_shape):
     model = models.Sequential(
         [
             layers.Input(shape=input_shape),
-            augmentation,
             layers.Conv2D(
                 25,
                 kernel_size=(3, 3),
@@ -189,7 +188,6 @@ if __name__ == "__main__":
 
     # Downsample all images for faster training
     IMG_SIZE = (100, 100, 3)
-    digit_size = (100, 100, 3)
     BATCH_SIZE = 32
     NUM_CLASSES = 6  # there are six tile types in Catan
     epochs = 100  # the maximum number of epochs used to train the model
@@ -197,13 +195,13 @@ if __name__ == "__main__":
     test_split = 0.1
     path_to_predict = "data/input/test1.png"
     model_save_path = (
-        "data/models/tile_detector_hexagons2.keras"
+        "data/models/tile_detector_hexagons.keras"
     )
     dataset_path = (
         "data/output/compiled_dataset/synthetic_dataset_hexagons.pkl"
     )
     label_encoder_path = (
-        "data/models/label_encoder_hexagons.pkl"
+        "data/output/compiled_dataset/label_encoder/label_encoder.pkl"
     )
 
     ##### DATASET PRE-PROCESSING #####
