@@ -49,8 +49,6 @@ class HomographyOutputTransform:
                       [0, s_y, 0],
                       [0, 0, 1]])
 
-        
-
         H_new = np.linalg.inv(S) @ homography_numpy @ S
         return H_new
 
