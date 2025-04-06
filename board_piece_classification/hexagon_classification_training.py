@@ -1,5 +1,5 @@
 import keras
-from keras import layers, models, callbacks
+from keras import layers, models, callbacks, metrics, regularizers
 import matplotlib.pyplot as plt
 import torch
 import ast
@@ -75,7 +75,7 @@ def model_predict(model, sample, label_encoder, img_size):
 
 def model_training(model, train_set, valid_set, epochs):
     # Stop when the loss does not improve significantly over 3 epochs
-    callback = callbacks.EarlyStopping(monitor="loss", min_delta=0.01, patience=7)
+    callback = callbacks.EarlyStopping(monitor="loss", min_delta=0.01, patience=3)
 
     # Keras expects a batched dataset
     batched_train = train_set.batch(BATCH_SIZE)
@@ -95,10 +95,11 @@ def model_training(model, train_set, valid_set, epochs):
     return model
 
 
-def data_augmentation():
+def data_augmentation(input_size):
     # Data augmentation component
     return keras.Sequential(
         [
+            layers.Input(input_size),
             layers.RandomFlip("horizontal"),
             layers.RandomFlip("vertical"),
             layers.RandomRotation(0.2),
@@ -131,12 +132,19 @@ def build_dataset(dataset_path, valid_split, test_split):
         indices[train_size + valid_size :],
     ]
 
+    # Define training set
     X_train = tf.gather(X, final_indices[0])
     y_train = tf.gather(y, final_indices[0])
 
+    # Pass the training set only through the data augmentation pipeline
+    augmentation = data_augmentation(X_train.shape[1:])
+    X_train = augmentation(X_train)
+
+    # Define validation set
     X_valid = tf.gather(X, final_indices[1])
     y_valid = tf.gather(y, final_indices[1])
 
+    # Define test set
     X_test = tf.gather(X, final_indices[2])
     y_test = tf.gather(y, final_indices[2])
 
@@ -144,8 +152,6 @@ def build_dataset(dataset_path, valid_split, test_split):
 
 
 def build_cnn(input_shape):
-    # Augment the training data
-    augmentation = data_augmentation()
 
     # Define CNN model
     model = models.Sequential(
@@ -157,17 +163,19 @@ def build_cnn(input_shape):
                 strides=(1, 1),
                 padding="valid",
                 activation="relu",
-                input_shape=input_shape,
+                input_shape=input_shape
             ),
+            layers.Dropout(0.15),
             layers.MaxPool2D(pool_size=(1, 1), padding="valid"),
             layers.Flatten(),
             layers.Dense(100, activation="relu"),
+            layers.Dropout(0.15),
             layers.Dense(NUM_CLASSES, activation="softmax"),
         ]
     )
 
     # Define optimizer
-    optimizer = keras.optimizers.Adam(learning_rate=5e-5, use_ema=False)
+    optimizer = keras.optimizers.Adam(learning_rate=5e-5, use_ema=True)
 
     # Compile the model
     model.compile(

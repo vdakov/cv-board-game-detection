@@ -56,7 +56,7 @@ def extract_hexagons(board_image):
 
 def classifiy_hexagons(hexagon_image_folder):
     """ "
-    Classify the hexagons as well as th numbers inside of them.
+    Classify given hexagons on a board as well as the numbers inside of them.
     @:param image_folder: The folder containing images of hexagons to be classified.
     @:return A dictionary containing the hexagon ids, the tile label and the number label
     """
