@@ -10,7 +10,7 @@ from visualization import utils
 from tqdm import tqdm
 
 
-def show_perspective_corrected_board(model, image, label, show_image=True):
+def extract_homography_prediction(model, image, label, show_image=True):
     matrix = model(image.unsqueeze(0))
     image = image.squeeze().cpu().detach().numpy()
     label, matrix = label.detach().cpu().numpy().reshape(
@@ -22,8 +22,8 @@ def show_perspective_corrected_board(model, image, label, show_image=True):
         image.copy(), np.linalg.inv(matrix + 1e-6), (w, h)
     )
 
-    print(matrix)
-    print(label)
+    print("Prediction:", matrix)
+    print("Ground Truth", label)
     
 
     if show_image:
