@@ -50,8 +50,7 @@ def perspective_correct_image(input, model_checkpoint_path, model_resolution = 1
     H, W= img.size  # Use .size to get width and height
 
     s_x = model_resolution / W
-    s_y = model_resolution / W
-
+    s_y = model_resolution / H
     S = np.array([[s_x, 0, 0],
         [0, s_y, 0],
         [0, 0, 1]])
