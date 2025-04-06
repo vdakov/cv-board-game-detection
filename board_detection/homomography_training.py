@@ -22,7 +22,7 @@ def extract_homography_prediction(model, image, label, show_image=True):
         image.copy(), np.linalg.inv(matrix + 1e-6), (w, h)
     )
 
-    print("Prediction:" matrix)
+    print("Prediction:", matrix)
     print("Ground Truth", label)
     
 
