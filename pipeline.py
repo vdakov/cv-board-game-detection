@@ -224,7 +224,7 @@ if __name__ == "__main__":
 
     # Process the board image
     board_image = perspective_correction(IMG_PATH, HOMOGRAPHY_MODEL_CHECKPOINT_PATH)
-    board_image = detect_board(IMG_PATH)
+    board_image = detect_board(board_image)
     hexagons = extract_hexagons(board_image)
 
     # Extract the centers of the hexagons for position information
