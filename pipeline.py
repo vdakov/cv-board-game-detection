@@ -1,7 +1,16 @@
 import argparse
+
+import cv2
+from matplotlib import transforms
+import torch
 import keras
 import pickle
+
+from ultralytics import YOLO
+from board_detection.homomography_network import HomographyNet
 from board_piece_classification.hexagon_prediction import predict_image
+from board_detection.yolo_extraction import board_detection_step
+from board_detection import perspective_correct_image
 from PIL import Image
 import pytesseract
 import os
@@ -43,11 +52,28 @@ def get_args():
         type=str,
         default="data/board.json",
     )
+    parser.add_argument(
+        "--homography_model_path",
+        help="Path to the homography model for perspective correction.",
+        type=str,
+        default="runs/models/homomography_hybrid_128_model.pth",
+    )
+    parser.add_argument(
+        "--yolo_model_path",
+        help="Path to the YOLO object detector to be used.",
+        type=str,
+        default="board_detection/data/output/train4/weights/best.pt"  ,
+    )
     return parser.parse_args()
 
 
-def detect_and_perspective_correct_board(IMG_PATH):
-    pass
+def detect_board(image, model_path):
+    model_yolo = YOLO(model_path)
+    class_id = 0 # One class, for Catan Boards
+    return board_detection_step(image, model_yolo, class_id) 
+
+def perspective_correction(img_path, model_checkpoint_path):
+    return perspective_correct_image.perspective_correct_image(img_path, model_checkpoint_path, model_resolution=128, path_or_img="path")
 
 
 def extract_hexagons(board_image):
@@ -191,10 +217,14 @@ def save_board_to_json(board, output_path):
 if __name__ == "__main__":
     args = get_args()
     IMG_PATH = args.img_path
+    HOMOGRAPHY_MODEL_CHECKPOINT_PATH = args.homography_model_path
+    YOLO_MODEL_CHECKPOINT_PATH = args.yolo_model_path
     output_path = args.output_path
+    
 
     # Process the board image
-    board_image = detect_and_perspective_correct_board(IMG_PATH)
+    board_image = perspective_correction(IMG_PATH, HOMOGRAPHY_MODEL_CHECKPOINT_PATH)
+    board_image = detect_board(IMG_PATH)
     hexagons = extract_hexagons(board_image)
 
     # Extract the centers of the hexagons for position information
