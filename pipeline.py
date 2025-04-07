@@ -114,19 +114,14 @@ def classifiy_hexagons(hexagon_image_list):
     with open(args.hexagon_label_encoder_path, "rb") as f:
         label_encoder = pickle.load(f)
 
-    final_dict = {"hex_id": [], "hex_label": [], "number_label": []}
+    final_dict = {}
 
-    hex_id = 1
+    hex_id = 0
     for img in hexagon_image_list:
-
         pred_hex_label, pred_number_label = predict_image(
             img, model, label_encoder, IMG_SIZE
         )
-
-        final_dict["hex_id"].append(hex_id)
-        final_dict["hex_label"].append(pred_hex_label)
-        final_dict["number_label"].append(pred_number_label)
-
+        final_dict[hex_id] = (pred_hex_label[0], pred_number_label)
         hex_id += 1
 
     return final_dict
@@ -148,27 +143,19 @@ def assemble_board(classified_hexagons, hex_positions=None):
         Dictionary representing the complete board with adjacency information, grid coordinates,
         and resource distribution statistics.
     """
-    # Guard
-    if not classified_hexagons or "hex_id" not in classified_hexagons:
-        raise ValueError("classified_hexagons must contain a 'hex_id' key")
-    num_hexes = len(classified_hexagons["hex_id"])
-    if num_hexes != 19:
-        print(f"Warning: Expected 19 hexagons, not {num_hexes}")
-
     board = {"hexagons": {}, "board_layout": {}, "resource_distribution": {}}
     # Create hexagons with the defined layout
-    for i in range(min(num_hexes, 19)):
-        hex_id = classified_hexagons["hex_id"][i]
-        hex_type = classified_hexagons["hex_label"][i]
-        hex_number = classified_hexagons["number_label"][i]
-        x, y = standard_positions[hex_id]
-        board["hexagons"][hex_id] = {
-            "id": hex_id,
+    for i in range(19):
+        if classified_hexagons.get(i) is None:
+            continue
+        hex_type, hex_number = classified_hexagons[i]
+        x, y = standard_positions[i]
+        board["hexagons"][i] = {
             "type": hex_type,
             "number": hex_number,
             "position": (x, y),
             "grid_coords": (x, y, 0),  # Using x,y as grid coords for simplicity
-            "adjacents": adjacency_map[hex_id],  # Use predefined adjacencies
+            "adjacents": adjacency_map[i],  # Use predefined adjacencies
         }
     # Create resource distribution counts
     resource_counts = {}
@@ -256,33 +243,7 @@ if __name__ == "__main__":
         hexagon.save(os.path.join(intermediate_folder, f"hexagon_{i}.png"))
     # Classify hexagons and assemble the board
     classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
-
-    # classified_hexagons_with_numbers = {
-    #     "hex_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
-    #     "hex_label": [
-    #         "wheat",
-    #         "sheep",
-    #         "lumber",
-    #         "wheat",
-    #         "desert",
-    #         "wheat",
-    #         "lumber",
-    #         "wheat",
-    #         "brick",
-    #         "brick",
-    #         "sheep",
-    #         "ore",
-    #         "sheep",
-    #         "lumber",
-    #         "sheep",
-    #         "ore",
-    #         "brick",
-    #         "ore",
-    #         "lumber",
-    #     ],
-    #     "number_label": [12, 3, 2, 10, 0, 5, 6, 11, 5, 11, 8, 10, 4, 8, 9, 3, 9, 6, 4],
-    # }
-
+    # Assemble the board
     board = assemble_board(classified_hexagons_with_numbers, hex_positions)
     save_board_to_json(board, intermediate_folder)
     visualize_board(board)
