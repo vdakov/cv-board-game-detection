@@ -41,7 +41,7 @@ def get_args():
         "--hexagon_detector_path",
         help="Input the path to the model that detects hexagons here.",
         type=str,
-        default="board_piece_classification/data/models/tile_detector_hexagons2.keras",
+        default="board_piece_classification/data/models/tile_detector_hexagons.keras",
     )
     parser.add_argument(
         "--hexagon_label_encoder_path",
@@ -73,7 +73,10 @@ def get_args():
 def detect_board(image: Image, model_path: str) -> Image:
     model_yolo = YOLO(model_path)
     class_id = 0
-    return board_detection_step(image, model_yolo, class_id, show_results=False)
+    bbox = board_detection_step(image, model_yolo, class_id, show_results=False)
+    bbox = list(map(int, bbox))
+    cropped_image = image.crop(bbox)
+    return cropped_image
 
 
 def perspective_correction(img_path: str, model_checkpoint_path: str) -> Image:
@@ -87,9 +90,8 @@ def extract_hexagons(board_image) -> list:
         "board_segmentation/data/models/sam_vit_b_01ec64.pth",
         "vit_b",
     )
-    # checkpoint_path, model_name = "board_segmentation/data/models/sam_vit_h_4b8939.pth", "vit_h"
     mask_generator = load_segment_anything(checkpoint_path, model_name)
-    np_img = np.array(board_image)
+    np_img = cv2.cvtColor(np.array(board_image), cv2.COLOR_RGB2BGR)
     return extract_single_image_hexagon(np_img, mask_generator, show_plots=False)
 
 
@@ -227,17 +229,34 @@ def save_board_to_json(board, output_path):
 
 
 if __name__ == "__main__":
+    # CUDA verification
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    if torch.cuda.is_available():
+        print(f"CUDA device count: {torch.cuda.device_count()}")
+        print(f"CUDA device name: {torch.cuda.get_device_name(0)}")
+        print(f"CUDA version: {torch.version.cuda}")
+
     args = get_args()
     IMG_PATH = args.img_path
     HOMOGRAPHY_MODEL_CHECKPOINT_PATH = args.homography_model_path
     YOLO_MODEL_CHECKPOINT_PATH = args.yolo_model_path
     output_path = args.output_path
-
-    # Process the board image
+    # Create a folder for intermediate steps, named after the image name
+    image_name = os.path.splitext(os.path.basename(IMG_PATH))[0]
+    intermediate_folder = os.path.join("data/input", image_name)
+    os.makedirs(intermediate_folder, exist_ok=True)
+    # Detect the board
     board_image = perspective_correction(IMG_PATH, HOMOGRAPHY_MODEL_CHECKPOINT_PATH)
+    board_image.save(os.path.join(intermediate_folder, "corrected_board.png"))
+    # Segment the board
     board_image = detect_board(board_image, YOLO_MODEL_CHECKPOINT_PATH)
+    board_image.save(os.path.join(intermediate_folder, "detected_board.png"))
     hexagons, hex_positions = extract_hexagons(board_image)
-
+    # Save the segmented hexagons
+    for i, hexagon in enumerate(hexagons):
+        hexagon.save(os.path.join(intermediate_folder, f"hexagon_{i}.png"))
     # Classify hexagons and assemble the board
     classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
 

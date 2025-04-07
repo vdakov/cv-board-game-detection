@@ -57,7 +57,7 @@ def load_segment_anything(sam_checkpoint_path, model_name):
     if not sam_checkpoint.is_file():
         print("Segment Anything Model not found. Downloading...")
         urllib.request.urlretrieve(
-            "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
+            "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
             sam_checkpoint,
         )
     sam = sam_model_registry[model_name](checkpoint=sam_checkpoint)
