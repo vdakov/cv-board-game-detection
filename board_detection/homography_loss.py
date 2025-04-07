@@ -4,8 +4,10 @@ import torch.nn.functional as F
 
 
 class PhotometricLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, model, lambda_l2=1e-4):
         super(PhotometricLoss, self).__init__()
+        self.model = model
+        # self.lambda_l2 = lambda_l2
 
     def forward(self, H_pred, H_true, I):
         """
@@ -20,11 +22,19 @@ class PhotometricLoss(nn.Module):
 
         # Reshape 9-element vectors to 3x3 matrices
         H_pred = H_pred.view(batch_size, 3, 3)
+        # H_pred = torch.clamp(H_pred, min=-1e6, max=1e6)
         H_true = H_true.view(batch_size, 3, 3)
 
         # Invert the homography matrices
-        H_pred_inv = torch.linalg.inv(H_pred)
-        H_true_inv = torch.linalg.inv(H_true)
+        # epsilon = 1e-6
+        H_pred_inv = torch.linalg.pinv(H_pred)
+        H_true_inv = torch.linalg.pinv(H_true)
+
+
+        if torch.isnan(H_pred_inv).any() or torch.isinf(H_pred_inv).any():
+            print("Warning: NaN or Inf detected in H_pred_inv")
+            
+
 
         def build_perspective_grid(H_inv, height, width):
             """
@@ -53,9 +63,9 @@ class PhotometricLoss(nn.Module):
 
             # Apply the homography transformation: new_points = H_inv * grid
             new_points = torch.bmm(H_inv, grid)  # shape (B, 3, H*W)
-
             # Normalize by the third (homogeneous) coordinate
-            new_points = new_points / new_points[:, 2:3, :]  # shape (B, 3, H*W)
+            epsilon = 1e-6
+            new_points = new_points / (new_points[:, 2:3, :] + epsilon)
 
             # Extract x and y coordinates
             x_new = new_points[:, 0, :]  # shape (B, H*W)
@@ -82,7 +92,12 @@ class PhotometricLoss(nn.Module):
             I, grid_true, mode="bilinear", padding_mode="zeros", align_corners=False
         )
 
-        # Compute the photometric loss (mean squared error between warped images)
+        homography_loss = F.mse_loss(H_pred[:, :2], H_true[:, :2])
         photometric_loss = F.mse_loss(I_pred_warped, I_true_warped)
 
-        return photometric_loss
+        total_loss = photometric_loss + homography_loss
+
+        if torch.isnan(photometric_loss).any() or torch.isinf(photometric_loss).any():
+            print("Warning: NaN or Inf detected in photometric_loss")
+
+        return total_loss

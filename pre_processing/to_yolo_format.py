@@ -4,8 +4,8 @@ import cv2
 import random
 
 # Paths
-data_dir = "pre_processing/data/output/synthetic_boards_blended"
-json_file = os.path.join(data_dir, "bboxes.json")
+data_dir = "pre_processing/data/output/perspective_distorted_boards"
+json_file = os.path.join(data_dir, "bbox_coordinates.json")
 output_dir = "board_detection/data/input"
 train_dir = os.path.join(output_dir, "train")
 val_dir = os.path.join(output_dir, "val")
@@ -27,6 +27,7 @@ with open(json_file, "r") as f:
 
 # Shuffle and split data
 image_names = list(annotations.keys())
+image_names = [name for name in image_names if "matrix" not in name]
 random.shuffle(image_names)
 split_idx = int(0.8 * len(image_names))
 train_images = image_names[:split_idx]
@@ -95,6 +96,7 @@ val: {val_images_dir}
 nc: 1
 names: ['Catan-Board']
 """
+
 
 with open(data_yaml_path, "w") as f:
     f.write(data_yaml)
