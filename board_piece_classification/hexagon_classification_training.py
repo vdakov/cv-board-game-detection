@@ -1,6 +1,7 @@
-import keras
-from keras import layers, models, callbacks, metrics, regularizers
+from keras import layers, models, callbacks, Sequential, optimizers, utils, initializers
+from sklearn.metrics import roc_curve, auc, average_precision_score, roc_auc_score
 import matplotlib.pyplot as plt
+import json
 import torch
 import ast
 import pickle
@@ -9,9 +10,10 @@ from PIL import Image
 import numpy as np
 from torchvision.transforms import ToTensor
 import os
+import random
 
 
-def plot_hist(hist):
+def plot_loss_accuracy(hist):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
     # Plot train and validation accuracies
@@ -21,7 +23,7 @@ def plot_hist(hist):
     axes[0].plot(
         hist.history["val_accuracy"],
         label="Validation accuracy",
-        linestyle="dashed",
+        linestyle="solid",
         color="c",
     )
     axes[0].set_title(f"Accuracies for CNN model on Catan tile set")
@@ -32,9 +34,9 @@ def plot_hist(hist):
     # Plot train and validation losses
     axes[1].plot(hist.history["loss"], label="Train loss", linestyle="solid", color="b")
     axes[1].plot(
-        hist.history["val_loss"], label="Validation loss", linestyle="dashed", color="c"
+        hist.history["val_loss"], label="Validation loss", linestyle="solid", color="c"
     )
-    axes[1].set_title(f"Losses for model on Catan tile set")
+    axes[1].set_title(f"Losses for CNN model on Catan tile set")
     axes[1].set_ylabel("Loss")
     axes[1].set_xlabel("Epoch")
     axes[1].legend()
@@ -42,6 +44,23 @@ def plot_hist(hist):
     plt.tight_layout()
     plt.show()
 
+def plot_roc(num_classes, fpr, tpr, roc_auc, label_encoder):
+
+    for i in range(num_classes):
+        plt.plot(
+            fpr[i],
+            tpr[i],
+            label=f'Class {label_encoder.inverse_transform([i])} (AUC = {roc_auc[i]:.2f})'
+        )
+
+    plt.plot([0, 1], [0, 1], 'k--', label='Random Guessing')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve for Each Class')
+    plt.legend(loc='lower right')
+    plt.show()
 
 def to_tensor(tensor_str):
     # Convert string to a list using ast.literal_eval
@@ -49,13 +68,33 @@ def to_tensor(tensor_str):
     return torch.tensor(tensor_list)
 
 
-def model_eval(model, ds_test):
+def model_eval(model, ds_test, X_test, y_test, num_classes):
 
+    # First get the test loss and accuracy
     ds_test = ds_test.batch(BATCH_SIZE)
-
     loss, acc = model.evaluate(ds_test, verbose=2)
-    print(f"Model loss on the test dataset: {loss}")
-    print(f"Model accuracy on the test set: {acc}")
+
+    # Then get the prediction to compute other metrics
+    X_test_np = X_test.numpy()
+    y_pred = model.predict(X_test_np)
+
+    y_test_np= utils.to_categorical(y_test, num_classes=num_classes)
+    y_test_np = y_test_np.numpy()
+
+    # Compute the roc curves and the AUC
+    fpr = {}
+    tpr = {}
+    roc_auc = {}
+
+    final_auc = roc_auc_score(y_test_np, y_pred, average="macro", multi_class="ovr")
+
+    for i in range(y_test_np.shape[1]):
+        fpr[i], tpr[i], _ = roc_curve(y_test_np[:, i], y_pred[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    map_score = average_precision_score(y_test_np, y_pred, average='macro')
+
+    return loss, acc, fpr, tpr, roc_auc, final_auc, map_score
 
 
 def model_predict(model, sample, label_encoder, img_size):
@@ -90,14 +129,14 @@ def model_training(model, train_set, valid_set, epochs):
     )
 
     # Plot training loss and accuracy
-    plot_hist(hist)
+    plot_loss_accuracy(hist)
 
     return model
 
 
 def data_augmentation(input_size):
     # Data augmentation component
-    return keras.Sequential(
+    return Sequential(
         [
             layers.Input(input_size),
             layers.RandomFlip("horizontal"),
@@ -151,7 +190,10 @@ def build_dataset(dataset_path, valid_split, test_split):
     return [(X_train, y_train), (X_valid, y_valid), (X_test, y_test)]
 
 
-def build_cnn(input_shape):
+def build_cnn(input_shape, seed):
+
+    # Initialize all weights with the same seed to ensure reproducibility
+    initializer = initializers.RandomNormal(seed=seed)
 
     # Define CNN model
     model = models.Sequential(
@@ -163,19 +205,20 @@ def build_cnn(input_shape):
                 strides=(1, 1),
                 padding="valid",
                 activation="relu",
-                input_shape=input_shape
+                input_shape=input_shape,
+                kernel_initializer=initializer,
             ),
             layers.Dropout(0.15),
             layers.MaxPool2D(pool_size=(1, 1), padding="valid"),
             layers.Flatten(),
-            layers.Dense(100, activation="relu"),
+            layers.Dense(100, activation="relu", kernel_initializer=initializer),
             layers.Dropout(0.15),
-            layers.Dense(NUM_CLASSES, activation="softmax"),
+            layers.Dense(NUM_CLASSES, activation="softmax", kernel_initializer=initializer),
         ]
     )
 
     # Define optimizer
-    optimizer = keras.optimizers.Adam(learning_rate=5e-5, use_ema=True)
+    optimizer = optimizers.Adam(learning_rate=5e-5, use_ema=True)
 
     # Compile the model
     model.compile(
@@ -192,6 +235,12 @@ if __name__ == "__main__":
     # Fix error where multiple libiomp5md.dll files are present
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+    # Seed everything to ensure reproducibility
+    seed = 42
+    np.random.seed(seed)
+    tf.random.set_seed(seed)
+    random.seed(seed)
+
     ##### PARAMETER DEFINITION #####
 
     # Downsample all images for faster training
@@ -204,6 +253,9 @@ if __name__ == "__main__":
     path_to_predict = "data/input/test1.png"
     model_save_path = (
         "data/models/tile_detector_hexagons.keras"
+    )
+    model_result_save_path = (
+        "data/output/tile_detector_hexagon_test_results.txt"
     )
     dataset_path = (
         "data/output/compiled_dataset/synthetic_dataset_hexagons.pkl"
@@ -228,7 +280,7 @@ if __name__ == "__main__":
     ##### TRAINING THE MODEL #####
 
     # First build the model
-    model = build_cnn(IMG_SIZE)
+    model = build_cnn(IMG_SIZE, seed)
 
     # Then train it on the input data
     # This will also plot the train and validation accuracies
@@ -240,10 +292,23 @@ if __name__ == "__main__":
     ##### TESTING THE MODEL #####
 
     # Test the model on the test set
-    model_eval(model, test_set)
+    loss, acc, fpr, tpr, roc_auc, final_auc, map_score = model_eval(model, test_set, X_test, y_test, NUM_CLASSES)
+
+    model_result_dict = {
+        'test_loss': loss,
+        'test_acc': acc,
+        'test_map_score': map_score,
+        'test_auc': final_auc
+    }
+
+    with open(model_result_save_path, "w") as file:
+        json.dump(model_result_dict, file)
 
     with open(label_encoder_path, "rb") as f:
         label_encoder = pickle.load(f)
+
+    # Plot the ROC curve
+    plot_roc(NUM_CLASSES, fpr, tpr, roc_auc, label_encoder)
 
     # Predict a single sample that is different from the test set
     model_predict(model, path_to_predict, label_encoder, IMG_SIZE[:2])
