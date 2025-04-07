@@ -204,3 +204,6 @@ board_segmentation/sam_checkpoint/sam_vit_b_01ec64.pth
 board_segmentation/sam_checkpoint/sam_vit_h_4b8939.pth
 yolo11n.pt
 yolov8n.pt
+board_segmentation/models/sam_vit_h_4b8939.pth
+.gitignore
+board_segmentation/models/sam_vit_b_01ec64.pth
