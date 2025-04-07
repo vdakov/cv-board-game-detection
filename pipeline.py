@@ -53,7 +53,7 @@ def get_args():
         "--output_path",
         help="Path to save the assembled board JSON file.",
         type=str,
-        default="data/board.json",
+        default="data/output",
     )
     parser.add_argument(
         "--homography_model_path",
@@ -198,9 +198,7 @@ def save_board_to_json(board, output_path):
         board: The board dictionary created by assemble_board
         output_path: Path where the JSON file should be saved
     """
-    # Create the output directory if it doesn't exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
     # Convert numpy arrays to lists for JSON serialization
     def convert_for_json(obj):
         if isinstance(obj, np.ndarray):
@@ -215,15 +213,12 @@ def save_board_to_json(board, output_path):
             return [convert_for_json(item) for item in obj]
         else:
             return obj
-
-    # Convert the board to a JSON-serializable format
     json_board = convert_for_json(board)
-
-    # Save to file
     try:
-        with open(output_path, "w") as f:
+        output_path_file = os.path.join(output_path, "board.json")
+        with open(output_path_file, "w") as f:
             json.dump(json_board, f, indent=2)
-        print(f"Board saved to {output_path}")
+        print(f"Board saved to {output_path_file}")
     except Exception as e:
         print(f"Error saving board to JSON: {e}")
 
@@ -245,7 +240,7 @@ if __name__ == "__main__":
     output_path = args.output_path
     # Create a folder for intermediate steps, named after the image name
     image_name = os.path.splitext(os.path.basename(IMG_PATH))[0]
-    intermediate_folder = os.path.join("data/input", image_name)
+    intermediate_folder = os.path.join(output_path, image_name)
     os.makedirs(intermediate_folder, exist_ok=True)
     # Detect the board
     board_image = perspective_correction(IMG_PATH, HOMOGRAPHY_MODEL_CHECKPOINT_PATH)
@@ -287,5 +282,5 @@ if __name__ == "__main__":
     # }
 
     board = assemble_board(classified_hexagons_with_numbers, hex_positions)
-    save_board_to_json(board, output_path)
+    save_board_to_json(board, intermediate_folder)
     visualize_board(board)
