@@ -41,10 +41,10 @@ def plot_roc(num_classes, fpr, tpr, roc_auc, label_encoder, save_path):
         plt.plot(
             fpr[i],
             tpr[i],
-            label=f"Class {label_encoder.inverse_transform([i])} (AUC = {roc_auc[i]:.2f})",
+            label=f"Class {label_encoder.inverse_transform([i])[0]} (AUC = {roc_auc[i]:.2f})",
         )
 
-    plt.plot([0, 1], [0, 1], "k--", label="Random Guessing")
+    plt.plot([0, 1], [0, 1], "k--", label="Random Guessing", color="gainsboro")
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel("False Positive Rate")

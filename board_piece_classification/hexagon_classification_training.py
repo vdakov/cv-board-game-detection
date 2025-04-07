@@ -162,7 +162,7 @@ def build_cnn(input_shape, seed):
             layers.Dropout(0.15),
             layers.MaxPool2D(pool_size=(1, 1), padding="valid"),
             layers.Flatten(),
-            layers.Dense(100, activation="relu", kernel_initializer=initializer),
+            layers.Dense(80, activation="relu", kernel_initializer=initializer),
             layers.Dropout(0.15),
             layers.Dense(
                 NUM_CLASSES, activation="softmax", kernel_initializer=initializer
@@ -171,7 +171,7 @@ def build_cnn(input_shape, seed):
     )
 
     # Define optimizer
-    optimizer = optimizers.Adam(learning_rate=5e-5, use_ema=True)
+    optimizer = optimizers.Adam(learning_rate=5e-4, use_ema=True)
 
     # Compile the model
     model.compile(

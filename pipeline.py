@@ -103,7 +103,7 @@ def classifiy_hexagons(hexagon_image_list):
     """
 
     # reshape to the size expected by the tile detector
-    IMG_SIZE = (243, 256, 3)
+    IMG_SIZE = (100, 100, 3)
 
     args = get_args()
 
@@ -199,6 +199,7 @@ def save_board_to_json(board, output_path):
         output_path: Path where the JSON file should be saved
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
     # Convert numpy arrays to lists for JSON serialization
     def convert_for_json(obj):
         if isinstance(obj, np.ndarray):
@@ -213,6 +214,7 @@ def save_board_to_json(board, output_path):
             return [convert_for_json(item) for item in obj]
         else:
             return obj
+
     json_board = convert_for_json(board)
     try:
         output_path_file = os.path.join(output_path, "board.json")
