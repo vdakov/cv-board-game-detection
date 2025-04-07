@@ -43,7 +43,7 @@ if __name__ == '__main__':
     tesseract_result_save_path = "data/output/number_detector_test_results.txt"
     label_encoder_path = "data/output/compiled_dataset/label_encoder/label_encoder_numbers.pkl"
     roc_curve_save_path = "data/output/number_detector_roc_curve.png"
-    no_samples_to_predict = 500
+    no_samples_to_predict = 1000
     num_classes = 11
 
     print(f"Compiling dataset at path: {dataset_path}")
