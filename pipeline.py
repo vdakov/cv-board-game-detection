@@ -80,10 +80,10 @@ def extract_hexagons(board_image):
     pass
 
 
-def classifiy_hexagons(hexagon_image_folder):
+def classifiy_hexagons(hexagon_image_list):
     """ "
     Classify given hexagons on a board as well as the numbers inside of them.
-    @:param image_folder: The folder containing images of hexagons to be classified.
+    @:param hexagon_image_list: A list of PIL images containing segmented hexagons.
     @:return A dictionary containing the hexagon ids, the tile label and the number label
     """
 
@@ -102,11 +102,10 @@ def classifiy_hexagons(hexagon_image_folder):
     final_dict = {"hex_id": [], "hex_label": [], "number_label": []}
 
     hex_id = 1
-    for img in os.listdir(hexagon_image_folder):
-        img_path = f"{hexagon_image_folder}/{img}"
+    for img in hexagon_image_list:
 
         pred_hex_label, pred_number_label = predict_image(
-            img_path, model, label_encoder, IMG_SIZE
+            img, model, label_encoder, IMG_SIZE
         )
 
         final_dict["hex_id"].append(hex_id)
