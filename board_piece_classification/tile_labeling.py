@@ -19,7 +19,7 @@ def to_tf_dataset(ds_dict, output_path):
     label_encoder = label_encoder.fit(labels)
 
     # Save the employed label encoder to file
-    with open(f"{output_path}/label_encoder/label_encoder.pkl", "wb") as f:
+    with open(f"{output_path}/label_encoder/label_encoder_hexagons.pkl", "wb") as f:
         pickle.dump(label_encoder, f)
 
     y_encoded = label_encoder.transform(labels)

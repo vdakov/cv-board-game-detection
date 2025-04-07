@@ -63,7 +63,7 @@ def model_predict(model, sample, label_encoder, img_size):
     print(f"Image at path: {sample} is a {pred_label} tile")
 
 
-def model_training(model, train_set, valid_set, epochs):
+def model_training(model, train_set, valid_set, epochs, save_path):
     # Stop when the loss does not improve significantly over 3 epochs
     callback = callbacks.EarlyStopping(monitor="loss", min_delta=0.01, patience=3)
 
@@ -80,7 +80,7 @@ def model_training(model, train_set, valid_set, epochs):
     )
 
     # Plot training loss and accuracy
-    plot_loss_accuracy(hist)
+    plot_loss_accuracy(hist, save_path)
 
     return model
 
@@ -212,7 +212,13 @@ if __name__ == "__main__":
         "data/output/compiled_dataset/synthetic_dataset_hexagons.pkl"
     )
     label_encoder_path = (
-        "data/output/compiled_dataset/label_encoder/label_encoder.pkl"
+        "data/output/compiled_dataset/label_encoder/label_encoder_hexagons.pkl"
+    )
+    train_plot_save_path = (
+        "data/output/hex_detector_training_plot.png"
+    )
+    roc_curve_save_path = (
+        "data/output/hex_detector_roc_curve.png"
     )
 
     ##### DATASET PRE-PROCESSING #####
@@ -235,7 +241,7 @@ if __name__ == "__main__":
 
     # Then train it on the input data
     # This will also plot the train and validation accuracies
-    model = model_training(model, train_set, validation_set, epochs)
+    model = model_training(model, train_set, validation_set, epochs, train_plot_save_path)
 
     model.save(model_save_path)
     print(f"Trained model saved at: {model_save_path}")
@@ -259,7 +265,7 @@ if __name__ == "__main__":
         label_encoder = pickle.load(f)
 
     # Plot the ROC curve
-    plot_roc(NUM_CLASSES, fpr, tpr, roc_auc, label_encoder)
+    plot_roc(NUM_CLASSES, fpr, tpr, roc_auc, label_encoder, roc_curve_save_path)
 
     # Predict a single sample that is different from the test set
     model_predict(model, path_to_predict, label_encoder, IMG_SIZE[:2])

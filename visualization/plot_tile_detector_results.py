@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-def plot_loss_accuracy(hist):
+def plot_loss_accuracy(hist, save_path):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
     # Plot train and validation accuracies
@@ -29,9 +29,11 @@ def plot_loss_accuracy(hist):
     axes[1].legend()
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(save_path)
 
-def plot_roc(num_classes, fpr, tpr, roc_auc, label_encoder):
+    plt.close()
+
+def plot_roc(num_classes, fpr, tpr, roc_auc, label_encoder, save_path):
 
     for i in range(num_classes):
         plt.plot(
@@ -47,4 +49,6 @@ def plot_roc(num_classes, fpr, tpr, roc_auc, label_encoder):
     plt.ylabel('True Positive Rate')
     plt.title('ROC Curve for Each Class')
     plt.legend(loc='lower right')
-    plt.show()
+    plt.savefig(save_path)
+
+    plt.close()
