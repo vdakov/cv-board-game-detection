@@ -164,18 +164,38 @@ def train_model(
 
 
 
-def calculate_test_loss(model, test_loader, criterion, device):
-    test_loss = 0
-    running_loss = 0
-    for inputs, labels in tqdm(test_loader):
-        inputs, labels = inputs.to(device), labels.to(device)
+def calculate_test_loss(model, test_loader, criterion, device, output_matrix_shape=(3, 3)):
+    model.eval()  # Set the model to evaluation mode
+    test_loss = 0.0
+    running_loss = 0.0
+    all_predicted_matrices = []
+    all_ground_truth_matrices = []
 
-        outputs = model(inputs)
-        if isinstance(criterion, PhotometricLoss):
-            loss = criterion(outputs, labels, inputs)
-        else:
-            loss = criterion(outputs, labels)
-        running_loss += loss.item()
+    with torch.no_grad():
+        for inputs, labels in tqdm(test_loader, desc="Testing"):
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            outputs = model(inputs)
+            if isinstance(criterion, PhotometricLoss):
+                loss = criterion(outputs, labels, inputs)
+            else:
+                loss = criterion(outputs, labels)
+
+            running_loss += loss.item()
+
+            # Reshape the batch of 9-dimensional outputs into matrices
+            batch_size = outputs.size(0)
+            reshaped_outputs_np = outputs.cpu().numpy().reshape(batch_size, *output_matrix_shape)
+            all_predicted_matrices.extend(reshaped_outputs_np)
+
+            # Reshape the batch of 9-dimensional ground truth into matrices
+            if labels.ndim > 1 and labels.size(-1) == 9:  # Check if labels are also 9-dim vectors
+                reshaped_labels_np = labels.cpu().numpy().reshape(batch_size, *output_matrix_shape)
+                all_ground_truth_matrices.extend(reshaped_labels_np)
+            else:
+                print("Warning: Ground truth labels are not 9-dimensional vectors. Skipping reshaping.")
+                # You might want to handle this differently based on your actual labels
+                all_ground_truth_matrices.extend(labels.cpu().numpy())
 
     test_loss = running_loss / len(test_loader.dataset)
-    return test_loss
+    return test_loss, all_predicted_matrices, all_ground_truth_matrices
