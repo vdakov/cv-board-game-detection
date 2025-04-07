@@ -88,7 +88,7 @@ def classifiy_hexagons(hexagon_image_list):
     """
 
     # reshape to the size expected by the tile detector
-    IMG_SIZE = (243, 256, 3)
+    IMG_SIZE = (100, 100, 3)
 
     args = get_args()
 
