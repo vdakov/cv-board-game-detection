@@ -9,9 +9,8 @@ import pytesseract
 import re
 
 
-def predict_hexagons(model, sample, label_encoder, img_size):
+def predict_hexagons(model, img, label_encoder, img_size):
     # Read the image
-    img = Image.open(sample).convert("RGB")
     img_np = ToTensor()(img)
     img_np = torch.nn.functional.interpolate(img_np.unsqueeze(0), size=img_size[:2])
     img_np = img_np.permute(0, 2, 3, 1)
@@ -46,28 +45,29 @@ def preprocess_image(img, zoom, threshold):
     return img
 
 
-def predict_number(img_path):
-    img1 = np.array(preprocess_image(Image.open(img_path), 3.5, 95))
+def predict_number(img):
+    img1 = np.array(preprocess_image(img, 3.5, 95))
     text = pytesseract.image_to_string(img1, config="--psm 13")
 
     number = [int(s) for s in re.findall(r"\b\d+\b", text)]
 
-    return number[0] if len(number) > 0 else 0
+    return str(number[0]) if len(number) > 0 else '0'
 
 
-def predict_image(img_path, models, label_encoder, IMG_SIZE):
-    hex_label = predict_hexagons(models, img_path, label_encoder, IMG_SIZE[:2])
+def predict_image(img, models, label_encoder, IMG_SIZE):
+    hex_label = predict_hexagons(models, img, label_encoder, IMG_SIZE[:2])
 
-    number_label = predict_number(img_path)
+    number_label = predict_number(img)
 
     return hex_label, number_label
 
 
 if __name__ == "__main__":
 
-    model_path = "model/tile_detector_hexagons_mined.keras"
-    img_folder_path = "data/output/synthetic_tiles"
-    label_encoder_path = "data/output/compiled_dataset/label_encoder/label_encoder.pkl"
+    # Attempt to predict the tile and number of a few sample tiles generated synthetically
+    model_path = "data/models/tile_detector_hexagons.keras"
+    img_folder_path = "../data/sample/mined_synthetic_tiles_sample"
+    label_encoder_path = "data/output/compiled_dataset/label_encoder/label_encoder_hexagons.pkl"
     IMG_SIZE = (100, 100, 3)
 
     model = keras.models.load_model(model_path)
@@ -77,8 +77,10 @@ if __name__ == "__main__":
     for i in range(0, 19):
         img_path = f"{img_folder_path}/hexagon_{i}.png"
 
+        img = Image.open(img_path).convert('RGB')
+
         hex_label, number_label = predict_image(
-            img_path, model, label_encoder, IMG_SIZE
+            img, model, label_encoder, IMG_SIZE
         )
 
         print(f"Hex at path {img_path} is of type {hex_label} - {number_label}")

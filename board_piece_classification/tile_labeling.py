@@ -19,7 +19,7 @@ def to_tf_dataset(ds_dict, output_path):
     label_encoder = label_encoder.fit(labels)
 
     # Save the employed label encoder to file
-    with open(f"{output_path}/label_encoder/label_encoder.pkl", "wb") as f:
+    with open(f"{output_path}/label_encoder/label_encoder_hexagons.pkl", "wb") as f:
         pickle.dump(label_encoder, f)
 
     y_encoded = label_encoder.transform(labels)
@@ -28,7 +28,7 @@ def to_tf_dataset(ds_dict, output_path):
     X_tensorflow = tf.convert_to_tensor(input, dtype=tf.float32)
     y_tensorflow = tf.convert_to_tensor(y_encoded, dtype=tf.int32)
 
-    with open(f"{output_path}/mined_synthetic_samples.pkl", "wb") as f:
+    with open(f"{output_path}/synthetic_dataset_hexagons.pkl", "wb") as f:
         pickle.dump((X_tensorflow.numpy(), y_tensorflow.numpy()), f)
 
 
@@ -46,19 +46,21 @@ def get_labeled_hexagons(
     # Dictionary that stores the reference images
     ref_dict = {}
     # Dictionary that stores for each label all images fitting this label
-    final_dict = {"img_path": [], "img_tensor": [], "img_label": []}
+    final_dict = {"img_path": [], "img_tensor": [], "img_label": [], "closest_ref": []}
 
     # Get reference images
     for cls in image_classes:
-        img = Image.open(f"{ref_img_folder}/{cls}.png")
-        img_np = transform(img)
+        ref_dict[cls] = []
+        for i in range(1, 4):
+            img = Image.open(f"{ref_img_folder}/{cls}_{i}.png").convert('RGB')
+            img_np = transform(img)
 
-        # interpolate to ensure same size
-        resized_mask = interpolate(mask_np.unsqueeze(0), resize_shape).squeeze(0)
-        resized_img = interpolate(img_np.unsqueeze(0), resize_shape).squeeze(0)
+            # interpolate to ensure same size
+            resized_mask = interpolate(mask_np.unsqueeze(0), resize_shape).squeeze(0)
+            resized_img = interpolate(img_np.unsqueeze(0), resize_shape).squeeze(0)
 
-        masked_ref = resized_img * resized_mask
-        ref_dict[cls].append(masked_ref)
+            masked_ref = resized_img * resized_mask
+            ref_dict[cls].append(masked_ref)
 
     # Label images
     for img_path in os.listdir(tile_img_folder):
@@ -98,10 +100,10 @@ def get_labeled_hexagons(
 
 if __name__ == "__main__":
 
-    tile_img_folder = "board_segmentation/data/output/mined_synthetic_tiles"
-    mask_folder = "board_piece_classification/data/input/tile_masks"
-    ref_img_folder = "board_piece_classification/data/input/synthetic_reference_tiles"
-    output_path = "board_piece_classification/data/output/compiled_dataset"
+    tile_img_folder = "../board_segmentation/data/output/mined_synthetic_tiles"
+    mask_folder = "data/input/tile_masks"
+    ref_img_folder = "data/input/synthetic_reference_tiles"
+    output_path = "data/output/compiled_dataset"
     resize_shape = (100, 100)
 
     # Get masked hexagons

@@ -16,14 +16,14 @@ def save_to_file(file_path, obj):
 
 def to_tf_datasets(ds_dict, output_path):
     hex_input = [x.numpy() for x in ds_dict["hex_tensor"]]
-    hex_labels = ds_dict["img_label_hexagon"]
+    hex_labels = ds_dict["img_number_label"]
 
     # Encode the hexes' labels and save them to file
     hex_encoder = LabelEncoder()
     y_hexagons_encoded = hex_encoder.fit_transform(hex_labels)
 
     hex_encoder_path = (
-        f"{output_path}/label_encoder/label_encoder_hexagons_expanded.pkl"
+        f"{output_path}/label_encoder/label_encoder_numbers.pkl"
     )
     save_to_file(hex_encoder_path, hex_encoder)
 
@@ -33,7 +33,7 @@ def to_tf_datasets(ds_dict, output_path):
 
     print("Compiled datasets; preparing to store")
 
-    save_path_hexagons = f"{output_path}/synthetic_dataset_hexagons_expanded.pkl"
+    save_path_hexagons = f"{output_path}/synthetic_dataset_numbers.pkl"
     save_to_file(save_path_hexagons, (X_hex, y_hexagons))
 
 
@@ -145,48 +145,43 @@ if __name__ == "__main__":
     final_dict = {
         "img_path": [],
         "hex_tensor": [],
-        "img_label_hexagon": [],
+        "img_number_label": [],
     }
 
     for tile in tile_types:
 
-        for tile_index in range(1, 4):
+        backgrounds_path = backgrounds_path1
 
-            # Determine what background types to use based on the art style on the tile
-            # Used to ensure that
-            if tile_index == 2:
-                backgrounds_path = backgrounds_path2
-            else:
-                backgrounds_path = backgrounds_path1
+        backgrounds = os.listdir(backgrounds_path)
 
-            backgrounds = os.listdir(backgrounds_path)
+        bg_index = 0
 
-            bg_index = 0
+        for background in backgrounds:
+            bg_path = f"{backgrounds_path}/{background}"
 
-            for background in backgrounds:
-                bg_path = f"{backgrounds_path}/{background}"
+            img_path = f"{tile_bgs_path}/{tile}_1.png"
 
-                img_path = f"{tile_bgs_path}/{tile}_{tile_index}.png"
+            for number in valid_numbers:
+                # Generate image
+                img = generate_tile_image(
+                    img_path, bg_path, img_size, number, font_path, tile
+                )
 
-                for number in valid_numbers:
-                    # Generate image
-                    img = generate_tile_image(
-                        img_path, bg_path, img_size, number, font_path, tile
-                    )
+                # Save image
+                img.save(
+                    f"{output_img_path}/{tile}_1_no_{number}_bg_{bg_index}.png"
+                )
 
-                    # Save image
-                    img.save(
-                        f"{output_img_path}/{tile}_{tile_index}_no_{number}_bg_{bg_index}.png"
-                    )
+                final_img = img_to_tensor(img, img_size)
 
-                    final_img = img_to_tensor(img, img_size)
+                number_label = '0' if tile == "desert" else number
 
-                    # Save relevant information to dictionary
-                    final_dict["img_path"].append(img_path)
-                    final_dict["hex_tensor"].append(final_img)
-                    final_dict["img_label_hexagon"].append(tile)
+                # Save relevant information to dictionary
+                final_dict["img_path"].append(img_path)
+                final_dict["hex_tensor"].append(final_img)
+                final_dict["img_number_label"].append(number_label)
 
-                    bg_index += 1
+                bg_index += 1
 
         print(f"Images generated for: {tile}")
 
