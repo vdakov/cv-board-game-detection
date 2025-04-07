@@ -11,7 +11,10 @@ from board_piece_classification.hexagon_prediction import predict_image
 from board_detection.yolo_extraction import board_detection_step
 from board_detection import perspective_correct_image
 from PIL import Image
-from board_segmentation.hexagon_extraction import extract_single_image_hexagon, load_segment_anything
+from board_segmentation.hexagon_extraction import (
+    extract_single_image_hexagon,
+    load_segment_anything,
+)
 import pytesseract
 import os
 import numpy as np
@@ -62,22 +65,28 @@ def get_args():
         "--yolo_model_path",
         help="Path to the YOLO object detector to be used.",
         type=str,
-        default="board_detection/data/models/yolo_best.pt"  ,
+        default="board_detection/data/models/yolo_best.pt",
     )
     return parser.parse_args()
 
 
 def detect_board(image: Image, model_path: str) -> Image:
     model_yolo = YOLO(model_path)
-    class_id = 0  
+    class_id = 0
     return board_detection_step(image, model_yolo, class_id, show_results=False)
 
-def perspective_correction(img_path:str, model_checkpoint_path: str) -> Image:    
-    return perspective_correct_image.perspective_correct_image(img_path, model_checkpoint_path, model_resolution=128, path_or_img="path")
+
+def perspective_correction(img_path: str, model_checkpoint_path: str) -> Image:
+    return perspective_correct_image.perspective_correct_image(
+        img_path, model_checkpoint_path, model_resolution=128, path_or_img="path"
+    )
 
 
-def extract_hexagons(board_image)-> list:
-    checkpoint_path, model_name = "board_segmentation/data/models/sam_vit_b_01ec64.pth", "vit_b"
+def extract_hexagons(board_image) -> list:
+    checkpoint_path, model_name = (
+        "board_segmentation/data/models/sam_vit_b_01ec64.pth",
+        "vit_b",
+    )
     # checkpoint_path, model_name = "board_segmentation/data/models/sam_vit_h_4b8939.pth", "vit_h"
     mask_generator = load_segment_anything(checkpoint_path, model_name)
     np_img = np.array(board_image)
@@ -223,13 +232,11 @@ if __name__ == "__main__":
     HOMOGRAPHY_MODEL_CHECKPOINT_PATH = args.homography_model_path
     YOLO_MODEL_CHECKPOINT_PATH = args.yolo_model_path
     output_path = args.output_path
-    
 
     # Process the board image
     board_image = perspective_correction(IMG_PATH, HOMOGRAPHY_MODEL_CHECKPOINT_PATH)
     board_image = detect_board(board_image, YOLO_MODEL_CHECKPOINT_PATH)
     hexagons, hex_positions = extract_hexagons(board_image)
-
 
     # Classify hexagons and assemble the board
     classified_hexagons_with_numbers = classifiy_hexagons(hexagons)

@@ -8,8 +8,11 @@ from pathlib import Path
 import urllib.request
 
 import torch
-from board_segmentation.segmentation import extract_hexagon_contours, filter_for_hexagons, segment_all
-
+from board_segmentation.segmentation import (
+    extract_hexagon_contours,
+    filter_for_hexagons,
+    segment_all,
+)
 
 
 def get_args():
@@ -48,8 +51,6 @@ def get_args():
     return args
 
 
-
-
 def load_segment_anything(sam_checkpoint_path, model_name):
 
     sam_checkpoint = Path(sam_checkpoint_path)
@@ -76,7 +77,6 @@ def extract_and_save_masks_directory(mask_generator, image_files, im_folder, sav
         cluster_img = filter_for_hexagons(img, masks, show_plots=show_plots)
         hexagons = extract_hexagon_contours(cluster_img)
 
-
         if show_plots:
             # Draw detected hexagons for visualization
             result = img.copy()
@@ -94,7 +94,7 @@ def extract_and_save_masks_directory(mask_generator, image_files, im_folder, sav
             x, y, w, h = cv2.boundingRect(hexagon)  # Get bounding box
             hex_crop = img[y : y + h, x : x + w]  # Crop the region
 
-                        # Calculate the center of the hexagon
+            # Calculate the center of the hexagon
             M = cv2.moments(hexagon)
             if M["m00"] != 0:
                 cx = int(M["m10"] / M["m00"])
@@ -107,7 +107,8 @@ def extract_and_save_masks_directory(mask_generator, image_files, im_folder, sav
             save_path = os.path.join(save_dir, f"hex_{idx}.png")
             cv2.imwrite(save_path, cv2.cvtColor(hex_crop, cv2.COLOR_RGB2BGR))
 
-    return centers 
+    return centers
+
 
 def extract_single_image_hexagon(img, mask_generator, show_plots=False):
     centers = []
@@ -132,9 +133,7 @@ def extract_single_image_hexagon(img, mask_generator, show_plots=False):
 
         centers.append((cx, cy))  # Store the center
 
-    return output, centers 
-
-
+    return output, centers
 
 
 def load_image(im_folder, image_file, save_dir):
@@ -150,9 +149,7 @@ def load_image(im_folder, image_file, save_dir):
     img = cv2.imread(image_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.GaussianBlur(img, (5, 5), 0)
-    return img 
-
-
+    return img
 
 
 if __name__ == "__main__":

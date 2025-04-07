@@ -29,7 +29,7 @@ def model_eval(model, ds_test, X_test, y_test, num_classes):
     X_test_np = X_test.numpy()
     y_pred = model.predict(X_test_np)
 
-    y_test_np= utils.to_categorical(y_test, num_classes=num_classes)
+    y_test_np = utils.to_categorical(y_test, num_classes=num_classes)
     y_test_np = y_test_np.numpy()
 
     # Compute the roc curves and the AUC
@@ -43,7 +43,7 @@ def model_eval(model, ds_test, X_test, y_test, num_classes):
         fpr[i], tpr[i], _ = roc_curve(y_test_np[:, i], y_pred[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
-    map_score = average_precision_score(y_test_np, y_pred, average='macro')
+    map_score = average_precision_score(y_test_np, y_pred, average="macro")
 
     return loss, acc, fpr, tpr, roc_auc, final_auc, map_score
 
@@ -164,7 +164,9 @@ def build_cnn(input_shape, seed):
             layers.Flatten(),
             layers.Dense(100, activation="relu", kernel_initializer=initializer),
             layers.Dropout(0.15),
-            layers.Dense(NUM_CLASSES, activation="softmax", kernel_initializer=initializer),
+            layers.Dense(
+                NUM_CLASSES, activation="softmax", kernel_initializer=initializer
+            ),
         ]
     )
 
@@ -202,24 +204,14 @@ if __name__ == "__main__":
     validation_split = 0.2
     test_split = 0.1
     path_to_predict = "data/input/test1.png"
-    model_save_path = (
-        "data/models/tile_detector_hexagons.keras"
-    )
-    model_result_save_path = (
-        "data/output/tile_detector_hexagon_test_results.txt"
-    )
-    dataset_path = (
-        "data/output/compiled_dataset/synthetic_dataset_hexagons.pkl"
-    )
+    model_save_path = "data/models/tile_detector_hexagons.keras"
+    model_result_save_path = "data/output/tile_detector_hexagon_test_results.txt"
+    dataset_path = "data/output/compiled_dataset/synthetic_dataset_hexagons.pkl"
     label_encoder_path = (
         "data/output/compiled_dataset/label_encoder/label_encoder_hexagons.pkl"
     )
-    train_plot_save_path = (
-        "data/output/hex_detector_training_plot.png"
-    )
-    roc_curve_save_path = (
-        "data/output/hex_detector_roc_curve.png"
-    )
+    train_plot_save_path = "data/output/hex_detector_training_plot.png"
+    roc_curve_save_path = "data/output/hex_detector_roc_curve.png"
 
     ##### DATASET PRE-PROCESSING #####
 
@@ -241,7 +233,9 @@ if __name__ == "__main__":
 
     # Then train it on the input data
     # This will also plot the train and validation accuracies
-    model = model_training(model, train_set, validation_set, epochs, train_plot_save_path)
+    model = model_training(
+        model, train_set, validation_set, epochs, train_plot_save_path
+    )
 
     model.save(model_save_path)
     print(f"Trained model saved at: {model_save_path}")
@@ -249,13 +243,15 @@ if __name__ == "__main__":
     ##### TESTING THE MODEL #####
 
     # Test the model on the test set
-    loss, acc, fpr, tpr, roc_auc, final_auc, map_score = model_eval(model, test_set, X_test, y_test, NUM_CLASSES)
+    loss, acc, fpr, tpr, roc_auc, final_auc, map_score = model_eval(
+        model, test_set, X_test, y_test, NUM_CLASSES
+    )
 
     model_result_dict = {
-        'test_loss': loss,
-        'test_acc': acc,
-        'test_map_score': map_score,
-        'test_auc': final_auc
+        "test_loss": loss,
+        "test_acc": acc,
+        "test_map_score": map_score,
+        "test_auc": final_auc,
     }
 
     with open(model_result_save_path, "w") as file:

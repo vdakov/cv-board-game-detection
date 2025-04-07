@@ -5,10 +5,11 @@ import numpy as np
 import torch
 from board_segmentation.mask_clustering import cluster_masks
 
+
 def filter_for_hexagons(original, anns, show_plots=False):
     if len(anns) == 0:
         return
-    
+
     sorted_anns = sorted(anns, key=lambda x: x["area"], reverse=True)
 
     if show_plots:
@@ -26,9 +27,7 @@ def filter_for_hexagons(original, anns, show_plots=False):
 
     cluster_img = np.zeros((H, W, 4))
 
-    unique_clusters = set(
-        ann["cluster"] for ann in sorted_anns if ann["cluster"] != -1
-    )
+    unique_clusters = set(ann["cluster"] for ann in sorted_anns if ann["cluster"] != -1)
     print("Estimated number of clusters: %d" % len(unique_clusters))
     print(
         "Estimated number of noise points: %d"
@@ -55,7 +54,8 @@ def filter_for_hexagons(original, anns, show_plots=False):
 
     return cluster_img
 
-def segment_all(mask_generator, img):    
+
+def segment_all(mask_generator, img):
     # Generate masks and release image to avoid memory overload
     masks = mask_generator.generate(img)
     del img
@@ -70,7 +70,7 @@ def segment_all(mask_generator, img):
 #     b = np.abs(x1 - x2)
 #     h_b = np.abs(y2 - y1)
 #     d = np.abs(x2 - x3)
-#     h_d = np.abs(y2 - y3) 
+#     h_d = np.abs(y2 - y3)
 
 #     theta_1 = np.arctan(h_b / b)
 #     theta_2 = np.arctan(h_d / d)
@@ -83,9 +83,9 @@ def segment_all(mask_generator, img):
 
 
 def filter_close_points(points, min_dist_ratio, image_shape):
-    min_dist = min_dist_ratio * min(image_shape[:2]) 
+    min_dist = min_dist_ratio * min(image_shape[:2])
     filtered = [points[0]]
-    
+
     for pt in points[1:]:
         if np.linalg.norm(pt - filtered[-1]) >= min_dist:
             filtered.append(pt)
@@ -95,26 +95,27 @@ def filter_close_points(points, min_dist_ratio, image_shape):
 
     return np.array(filtered)
 
+
 def calculate_angle(p1, p2, p3):
     # Create vectors from p2 to p1 and p2 to p3
     v1 = np.array(p1) - np.array(p2)
     v2 = np.array(p3) - np.array(p2)
-    
+
     # Compute the dot product and norms
     dot_prod = np.dot(v1, v2)
     norm_v1 = np.linalg.norm(v1)
     norm_v2 = np.linalg.norm(v2)
-    
+
     # Avoid division by zero
     if norm_v1 == 0 or norm_v2 == 0:
         return 0  # or raise an exception, as appropriate
-    
+
     # Compute the cosine of the angle and then the angle itself
     cos_angle = np.clip(dot_prod / (norm_v1 * norm_v2), -1.0, 1.0)
     angle = np.arccos(cos_angle)
 
     print("Candidate candle", angle)
-    
+
     return angle
 
 
@@ -125,24 +126,23 @@ def extract_hexagon_contours(cluster_img, show_plots=False):
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 
     cluster_img = cv2.morphologyEx(cluster_img, cv2.MORPH_OPEN, kernel)
-   
-    contours, _ = cv2.findContours(
-        cluster_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-    )
 
+    contours, _ = cv2.findContours(cluster_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     if show_plots:
         result = cv2.cvtColor(cluster_img.copy(), cv2.COLOR_GRAY2BGR)
         cv2.drawContours(result, contours, -1, (0, 255, 0), 2)
         plt.figure(figsize=(10, 5))
-        plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))  # Convert for matplotlib display
+        plt.imshow(
+            cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+        )  # Convert for matplotlib display
         plt.axis("off")
         plt.show()
-     # Reference area threshold: ignore if too small
+    # Reference area threshold: ignore if too small
     image_area = cluster_img.shape[0] * cluster_img.shape[1]
     min_area = image_area / 50.0  # anything smaller than 1/50th of image is skipped
 
-    hexagons = []       
+    hexagons = []
     hexagon_areas = []
     tolerance = 0.25
 
@@ -154,27 +154,25 @@ def extract_hexagon_contours(cluster_img, show_plots=False):
         approx = cv2.approxPolyDP(contour, epsilon, True)
         corners = approx.reshape(-1, 2)
         corners = filter_close_points(corners, 0.05, cluster_img.shape)
-        
 
         # print("Candidate", len(corners))
-       
 
         if len(corners) == 6:
 
-
             angles = [
-                calculate_angle(corners[i - 1 % len(corners)], corners[i], corners[(i + 1) % len(corners)])
+                calculate_angle(
+                    corners[i - 1 % len(corners)],
+                    corners[i],
+                    corners[(i + 1) % len(corners)],
+                )
                 for i in range(len(corners))
             ]
             total_angle = sum(angles)
             # print("Total angle", math.degrees(total_angle))
             # print("Angles", list(map(math.degrees, angles)))
 
+            if (705 * np.pi / 180) <= total_angle <= (735 * np.pi / 180):  # 720° ± 15
 
-            if (
-                (705 * np.pi / 180) <= total_angle <= (735 * np.pi / 180)   # 720° ± 15
-            ):
-                
                 area = cv2.contourArea(approx)
                 if area > min_area:
                     hexagons.append(approx)
@@ -187,7 +185,8 @@ def extract_hexagon_contours(cluster_img, show_plots=False):
     tolerance = 0.25  # ±25% tolerance
 
     filtered_hexagons = [
-        hex for hex, area in zip(hexagons, hexagon_areas)
+        hex
+        for hex, area in zip(hexagons, hexagon_areas)
         if (1 - tolerance) * average_area <= area <= (1 + tolerance) * average_area
     ]
 

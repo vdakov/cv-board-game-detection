@@ -22,9 +22,7 @@ def to_tf_datasets(ds_dict, output_path):
     hex_encoder = LabelEncoder()
     y_hexagons_encoded = hex_encoder.fit_transform(hex_labels)
 
-    hex_encoder_path = (
-        f"{output_path}/label_encoder/label_encoder_numbers.pkl"
-    )
+    hex_encoder_path = f"{output_path}/label_encoder/label_encoder_numbers.pkl"
     save_to_file(hex_encoder_path, hex_encoder)
 
     # Convert to TensorFlow tensors
@@ -168,13 +166,11 @@ if __name__ == "__main__":
                 )
 
                 # Save image
-                img.save(
-                    f"{output_img_path}/{tile}_1_no_{number}_bg_{bg_index}.png"
-                )
+                img.save(f"{output_img_path}/{tile}_1_no_{number}_bg_{bg_index}.png")
 
                 final_img = img_to_tensor(img, img_size)
 
-                number_label = '0' if tile == "desert" else number
+                number_label = "0" if tile == "desert" else number
 
                 # Save relevant information to dictionary
                 final_dict["img_path"].append(img_path)
