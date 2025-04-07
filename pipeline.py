@@ -91,12 +91,12 @@ def extract_hexagons(board_image) -> list:
         "vit_b",
     )
     mask_generator = load_segment_anything(checkpoint_path, model_name)
-    np_img = cv2.cvtColor(np.array(board_image), cv2.COLOR_RGB2BGR)
-    return extract_single_image_hexagon(np_img, mask_generator, show_plots=False)
+    np_img = np.array(board_image)
+    return extract_single_image_hexagon(np_img, mask_generator, show_plots=True)
 
 
 def classifiy_hexagons(hexagon_image_list):
-    """ "
+    """
     Classify given hexagons on a board as well as the numbers inside of them.
     @:param hexagon_image_list: A list of PIL images containing segmented hexagons.
     @:return A dictionary containing the hexagon ids, the tile label and the number label
