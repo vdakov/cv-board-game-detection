@@ -5,13 +5,13 @@ from matplotlib import transforms
 import torch
 import keras
 import pickle
-
 from ultralytics import YOLO
 from board_detection.homomography_network import HomographyNet
 from board_piece_classification.hexagon_prediction import predict_image
 from board_detection.yolo_extraction import board_detection_step
 from board_detection import perspective_correct_image
 from PIL import Image
+from board_segmentation.hexagon_extraction import extract_single_image_hexagon, load_segment_anything
 import pytesseract
 import os
 import numpy as np
@@ -67,17 +67,20 @@ def get_args():
     return parser.parse_args()
 
 
-def detect_board(image, model_path):
+def detect_board(image: Image, model_path: str) -> Image:
     model_yolo = YOLO(model_path)
-    class_id = 0 # One class, for Catan Boards
-    return board_detection_step(image, model_yolo, class_id) 
+    class_id = 0  
+    return board_detection_step(image, model_yolo, class_id)
 
-def perspective_correction(img_path, model_checkpoint_path):
+def perspective_correction(img_path:str, model_checkpoint_path: str) -> Image:    
     return perspective_correct_image.perspective_correct_image(img_path, model_checkpoint_path, model_resolution=128, path_or_img="path")
 
 
-def extract_hexagons(board_image):
-    pass
+def extract_hexagons(board_image)-> list:
+    checkpoint_path, model_name = "board_segmentation/models/sam_vit_b_01ec64.pth", "vit_b"
+    mask_generator = load_segment_anything(checkpoint_path, model_name)
+    np_img = np.array(board_image)
+    return extract_single_image_hexagon(np_img, mask_generator, show_plots=True)
 
 
 def classifiy_hexagons(hexagon_image_folder):
@@ -225,31 +228,8 @@ if __name__ == "__main__":
     # Process the board image
     board_image = perspective_correction(IMG_PATH, HOMOGRAPHY_MODEL_CHECKPOINT_PATH)
     board_image = detect_board(board_image)
-    hexagons = extract_hexagons(board_image)
+    hexagons, hex_positions = extract_hexagons(board_image)
 
-    # Extract the centers of the hexagons for position information
-    hex_positions = []
-    try:
-        # Try to extract positions from the hexagon images
-        for hex_img_path in sorted(os.listdir(hexagons)):
-            if hex_img_path.endswith(".png") or hex_img_path.endswith(".jpg"):
-                img = Image.open(os.path.join(hexagons, hex_img_path))
-                # Get the center of the hexagon image in its original context
-                # This assumes extract_hexagons stores the original position somehow
-                # Ideally, extract_hexagons would return both images and their positions
-                width, height = img.size
-                center = (width // 2, height // 2)
-                hex_positions.append(center)
-
-        if not hex_positions:
-            print(
-                "Warning: Could not extract hex positions from images. Will use default positions."
-            )
-            hex_positions = None
-    except Exception as e:
-        print(f"Error extracting hex positions: {e}")
-        print("Will use default positions instead.")
-        hex_positions = None
 
     # Classify hexagons and assemble the board
     classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
@@ -280,6 +260,6 @@ if __name__ == "__main__":
     #     "number_label": [12, 3, 2, 10, 0, 5, 6, 11, 5, 11, 8, 10, 4, 8, 9, 3, 9, 6, 4],
     # }
 
-    board = assemble_board(classified_hexagons_with_numbers)
+    board = assemble_board(classified_hexagons_with_numbers, hex_positions)
     save_board_to_json(board, output_path)
     visualize_board(board)

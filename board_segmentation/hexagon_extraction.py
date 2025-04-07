@@ -68,6 +68,7 @@ def load_segment_anything(sam_checkpoint_path, model_name):
 
 
 def extract_and_save_masks_directory(mask_generator, image_files, im_folder, save_dir):
+    centers = []
     for image_file in image_files:
 
         img = load_image(im_folder, image_file, save_dir)
@@ -93,11 +94,23 @@ def extract_and_save_masks_directory(mask_generator, image_files, im_folder, sav
             x, y, w, h = cv2.boundingRect(hexagon)  # Get bounding box
             hex_crop = img[y : y + h, x : x + w]  # Crop the region
 
+                        # Calculate the center of the hexagon
+            M = cv2.moments(hexagon)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+            else:
+                cx, cy = 0, 0
+
+            centers.append((cx, cy))  # Store the center
+
             save_path = os.path.join(save_dir, f"hex_{idx}.png")
             cv2.imwrite(save_path, cv2.cvtColor(hex_crop, cv2.COLOR_RGB2BGR))
 
-def extract_single_image_hexagon(img, mask_generator, show_plots=False):
+    return centers 
 
+def extract_single_image_hexagon(img, mask_generator, show_plots=False):
+    centers = []
     masks = segment_all(mask_generator, img)
     cluster_img = filter_for_hexagons(img, masks, show_plots=show_plots)
     hexagons = extract_hexagon_contours(cluster_img)
@@ -110,7 +123,16 @@ def extract_single_image_hexagon(img, mask_generator, show_plots=False):
         pil_crop = Image.fromarray(cv2.cvtColor(hex_crop, cv2.COLOR_BGR2RGB))
         output.append(pil_crop)
 
-    return output
+        M = cv2.moments(hexagon)
+        if M["m00"] != 0:
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+        else:
+            cx, cy = 0, 0
+
+        centers.append((cx, cy))  # Store the center
+
+    return output, centers 
 
 
 
