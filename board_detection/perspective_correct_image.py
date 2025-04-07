@@ -30,7 +30,8 @@ def get_warped_image_bounds(H, width, height):
 
 
 def perspective_correct_image(input, model_checkpoint_path, model_resolution = 128, path_or_img="path"):
-    checkpoint = torch.load(model_checkpoint_path)
+    # checkpoint = torch.load(model_checkpoint_path, map_location=torch.device("cpu"))
+    checkpoint = torch.load(model_checkpoint_path, map_location=torch.device("cpu"))
     model = HomographyNet((1, model_resolution, model_resolution))
     model.load_state_dict(checkpoint["best_model_state_dict"])
 

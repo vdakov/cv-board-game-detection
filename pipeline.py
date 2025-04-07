@@ -56,13 +56,13 @@ def get_args():
         "--homography_model_path",
         help="Path to the homography model for perspective correction.",
         type=str,
-        default="runs/models/homomography_hybrid_128_model.pth",
+        default="board_detection/data/models/homomography_hybrid_128_model.pth",
     )
     parser.add_argument(
         "--yolo_model_path",
         help="Path to the YOLO object detector to be used.",
         type=str,
-        default="board_detection/data/output/train4/weights/best.pt"  ,
+        default="board_detection/data/models/yolo_best.pt"  ,
     )
     return parser.parse_args()
 
@@ -70,17 +70,18 @@ def get_args():
 def detect_board(image: Image, model_path: str) -> Image:
     model_yolo = YOLO(model_path)
     class_id = 0  
-    return board_detection_step(image, model_yolo, class_id)
+    return board_detection_step(image, model_yolo, class_id, show_results=False)
 
 def perspective_correction(img_path:str, model_checkpoint_path: str) -> Image:    
     return perspective_correct_image.perspective_correct_image(img_path, model_checkpoint_path, model_resolution=128, path_or_img="path")
 
 
 def extract_hexagons(board_image)-> list:
-    checkpoint_path, model_name = "board_segmentation/models/sam_vit_b_01ec64.pth", "vit_b"
+    checkpoint_path, model_name = "board_segmentation/data/models/sam_vit_b_01ec64.pth", "vit_b"
+    # checkpoint_path, model_name = "board_segmentation/data/models/sam_vit_h_4b8939.pth", "vit_h"
     mask_generator = load_segment_anything(checkpoint_path, model_name)
     np_img = np.array(board_image)
-    return extract_single_image_hexagon(np_img, mask_generator, show_plots=True)
+    return extract_single_image_hexagon(np_img, mask_generator, show_plots=False)
 
 
 def classifiy_hexagons(hexagon_image_list):
@@ -226,7 +227,7 @@ if __name__ == "__main__":
 
     # Process the board image
     board_image = perspective_correction(IMG_PATH, HOMOGRAPHY_MODEL_CHECKPOINT_PATH)
-    board_image = detect_board(board_image)
+    board_image = detect_board(board_image, YOLO_MODEL_CHECKPOINT_PATH)
     hexagons, hex_positions = extract_hexagons(board_image)
 
 
