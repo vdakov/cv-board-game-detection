@@ -3,7 +3,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from board_segmentation.mask_clustering import cluster_masks
+from mask_clustering import cluster_masks
 
 
 def filter_for_hexagons(original, anns, show_plots=False):
@@ -140,7 +140,7 @@ def extract_hexagon_contours(cluster_img, show_plots=False):
         plt.show()
     # Reference area threshold: ignore if too small
     image_area = cluster_img.shape[0] * cluster_img.shape[1]
-    min_area = image_area / 50.0  # anything smaller than 1/50th of image is skipped
+    min_area = image_area / 100.0
 
     hexagons = []
     hexagon_areas = []
