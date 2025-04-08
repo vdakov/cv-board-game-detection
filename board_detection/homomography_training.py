@@ -24,7 +24,6 @@ def extract_homography_prediction(model, image, label, show_image=True):
 
     print("Prediction:", matrix)
     print("Ground Truth", label)
-    
 
     if show_image:
         transformed_image_label = cv2.warpPerspective(
@@ -145,7 +144,9 @@ def train_model(
         if epoch_val_loss < best_val_loss:
             best_val_loss = epoch_val_loss
             best_model_state_dict = model.state_dict()  # Save the best model weights
-            print(f"New best model found at epoch {epoch} with validation loss {best_val_loss:.4f}")
+            print(
+                f"New best model found at epoch {epoch} with validation loss {best_val_loss:.4f}"
+            )
 
         checkpoint = {
             "epoch": epoch,
@@ -160,9 +161,6 @@ def train_model(
         print(f"Model saved to {save_path}")
 
     return train_losses, val_losses, best_model_state_dict
-
-
-
 
 def calculate_test_loss(model, test_loader, criterion, device, output_matrix_shape=(3, 3)):
     model.eval()  # Set the model to evaluation mode

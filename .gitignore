@@ -197,13 +197,3 @@ runs/**
 !board_piece_classification/data/input/tile_masks/
 !board_piece_classification/data/input/tile_masks/**
 !board_piece_classification/data/input/test*
-!board_segmentation/sam_checkpoint
-!board_segmentation/sam_checkpoint/*
-!board_segmentation/sam_checkpoint/**
-board_segmentation/sam_checkpoint/sam_vit_b_01ec64.pth
-board_segmentation/sam_checkpoint/sam_vit_h_4b8939.pth
-yolo11n.pt
-yolov8n.pt
-board_segmentation/models/sam_vit_h_4b8939.pth
-.gitignore
-board_segmentation/models/sam_vit_b_01ec64.pth

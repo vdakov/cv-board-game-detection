@@ -6,10 +6,15 @@ import os
 import cv2
 from pathlib import Path
 import urllib.request
+import json
+import numpy as np
 
 import torch
-from board_segmentation.segmentation import extract_hexagon_contours, filter_for_hexagons, segment_all
-
+from board_segmentation.segmentation import (
+    extract_hexagon_contours,
+    filter_for_hexagons,
+    segment_all,
+)
 
 
 def get_args():
@@ -18,7 +23,7 @@ def get_args():
         "--sam_checkpoint_path",
         help="Echo the path to the SAM checkpoint here.",
         type=str,
-        default="board_segmentation/models/sam_vit_b_01ec64.pth",
+        default="board_segmentation/data/models/sam_vit_b_01ec64.pth",
     )
     parser.add_argument(
         "--model_name",
@@ -48,15 +53,13 @@ def get_args():
     return args
 
 
-
-
 def load_segment_anything(sam_checkpoint_path, model_name):
 
     sam_checkpoint = Path(sam_checkpoint_path)
     if not sam_checkpoint.is_file():
         print("Segment Anything Model not found. Downloading...")
         urllib.request.urlretrieve(
-            "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
+            "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
             sam_checkpoint,
         )
     sam = sam_model_registry[model_name](checkpoint=sam_checkpoint)
@@ -67,7 +70,9 @@ def load_segment_anything(sam_checkpoint_path, model_name):
     return mask_generator
 
 
-def extract_and_save_masks_directory(mask_generator, image_files, im_folder, save_dir):
+def extract_and_save_masks_directory(
+    mask_generator, image_files, im_folder, save_dir, show_plots=False
+):
     centers = []
     for image_file in image_files:
 
@@ -75,7 +80,6 @@ def extract_and_save_masks_directory(mask_generator, image_files, im_folder, sav
         masks = segment_all(mask_generator, img)
         cluster_img = filter_for_hexagons(img, masks, show_plots=show_plots)
         hexagons = extract_hexagon_contours(cluster_img)
-
 
         if show_plots:
             # Draw detected hexagons for visualization
@@ -94,7 +98,7 @@ def extract_and_save_masks_directory(mask_generator, image_files, im_folder, sav
             x, y, w, h = cv2.boundingRect(hexagon)  # Get bounding box
             hex_crop = img[y : y + h, x : x + w]  # Crop the region
 
-                        # Calculate the center of the hexagon
+            # Calculate the center of the hexagon
             M = cv2.moments(hexagon)
             if M["m00"] != 0:
                 cx = int(M["m10"] / M["m00"])
@@ -107,20 +111,21 @@ def extract_and_save_masks_directory(mask_generator, image_files, im_folder, sav
             save_path = os.path.join(save_dir, f"hex_{idx}.png")
             cv2.imwrite(save_path, cv2.cvtColor(hex_crop, cv2.COLOR_RGB2BGR))
 
-    return centers 
+    return centers
+
 
 def extract_single_image_hexagon(img, mask_generator, show_plots=False):
     centers = []
     masks = segment_all(mask_generator, img)
     cluster_img = filter_for_hexagons(img, masks, show_plots=show_plots)
-    hexagons = extract_hexagon_contours(cluster_img)
+    hexagons = extract_hexagon_contours(cluster_img, show_plots=show_plots)
 
     output = []
 
     for _, hexagon in enumerate(hexagons):
         x, y, w, h = cv2.boundingRect(hexagon)  # Get bounding box
         hex_crop = img[y : y + h, x : x + w]  # Crop the region
-        pil_crop = Image.fromarray(cv2.cvtColor(hex_crop, cv2.COLOR_BGR2RGB))
+        pil_crop = Image.fromarray(hex_crop)
         output.append(pil_crop)
 
         M = cv2.moments(hexagon)
@@ -132,27 +137,24 @@ def extract_single_image_hexagon(img, mask_generator, show_plots=False):
 
         centers.append((cx, cy))  # Store the center
 
-    return output, centers 
+    return output, centers
 
 
-
-
-def load_image(im_folder, image_file, save_dir):
+def load_image(im_folder, image_file, save_dir, make_dir=True):
     print(f"Processing {image_file}...")
     image_path = os.path.join(im_folder, image_file)
 
     # Create output subfolder with the name of the image file (without extension)
     image_name = os.path.splitext(image_file)[0]
-    output_subfolder = os.path.join(save_dir, image_name)
-    os.makedirs(output_subfolder, exist_ok=True)
+    if make_dir:
+        output_subfolder = os.path.join(save_dir, image_name)
+        os.makedirs(output_subfolder, exist_ok=True)
 
     # Load and preprocess the image
     img = cv2.imread(image_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.GaussianBlur(img, (5, 5), 0)
-    return img 
-
-
+    return img
 
 
 if __name__ == "__main__":
@@ -175,4 +177,101 @@ if __name__ == "__main__":
         print(f"No image files found in {im_folder}")
         exit(1)
 
-    extract_and_save_masks_directory(mask_generator, image_files, im_folder, save_dir)
+    evaluation_results = {
+        "image_names": [],
+        "tile_counts": [],
+        "avg_tile_sizes_percent": [],
+        "total_images": len(image_files),
+        "expected_tile_count": 19,  # Ideal number for Catan
+    }
+    # Process each image
+    for image_file in image_files:
+        print(f"Evaluating segmentation for {image_file}...")
+        img = load_image(im_folder, image_file, save_dir, make_dir=False)
+        image_area = img.shape[0] * img.shape[1]
+
+        masks = segment_all(mask_generator, img.copy())
+        cluster_img = filter_for_hexagons(img.copy(), masks, show_plots=False)
+        if cluster_img is None:
+            tiles_detected = 0
+            avg_tile_size_percent = 0
+        else:
+            hexagons = extract_hexagon_contours(cluster_img, show_plots=False)
+            tiles_detected = len(hexagons)
+            if tiles_detected > 0:
+                hexagon_areas = [
+                    cv2.contourArea(hex_contour) for hex_contour in hexagons
+                ]
+                avg_tile_size = sum(hexagon_areas) / len(hexagon_areas)
+                avg_tile_size_percent = (avg_tile_size / image_area) * 100
+            else:
+                avg_tile_size_percent = 0
+        # Load individual info
+        evaluation_results["image_names"].append(image_file)
+        evaluation_results["tile_counts"].append(tiles_detected)
+        evaluation_results["avg_tile_sizes_percent"].append(avg_tile_size_percent)
+
+        print(f"  - Tiles detected: {tiles_detected}/19")
+        print(f"  - Average tile size: {avg_tile_size_percent:.2f}% of image")
+    # Load summary info
+    evaluation_results["summary"] = {
+        "mean_tile_count": np.mean(evaluation_results["tile_counts"]),
+        "median_tile_count": np.median(evaluation_results["tile_counts"]),
+        "std_tile_count": np.std(evaluation_results["tile_counts"]),
+        "mean_tile_size_percent": np.mean(evaluation_results["avg_tile_sizes_percent"]),
+        "median_tile_size_percent": np.median(
+            evaluation_results["avg_tile_sizes_percent"]
+        ),
+        "std_tile_size_percent": np.std(evaluation_results["avg_tile_sizes_percent"]),
+    }
+    plt.figure(figsize=(10, 5))
+    tile_count_data = evaluation_results["tile_counts"]
+    max_count = (
+        max(tile_count_data)
+        if tile_count_data
+        else evaluation_results["expected_tile_count"] + 1
+    )
+    min_count = min(tile_count_data) if tile_count_data else 0
+    # First histogram - tile counts
+    bins = np.arange(min_count - 0.5, max_count + 1.5, 1.0)
+    plt.hist(tile_count_data, bins=bins, alpha=0.7, rwidth=0.85, edgecolor="black")
+    plt.axvline(
+        x=evaluation_results["expected_tile_count"],
+        color="r",
+        linestyle="--",
+        label=f"Ideal ({evaluation_results['expected_tile_count']} tiles)",
+    )
+    plt.title("Distribution of Detected Tile Counts")
+    plt.xlabel("Number of Tiles Detected")
+    plt.ylabel("Frequency")
+    plt.grid(axis="both", alpha=0.75)
+    plt.legend()
+    plt.savefig(os.path.join(save_dir, "tile_count_histogram.png"))
+    # Second histogram - tile sizes
+    plt.figure(figsize=(10, 5))
+    tile_size_data = evaluation_results["avg_tile_sizes_percent"]
+    if tile_size_data:
+        max_size = max(tile_size_data)
+        bins = np.arange(0, max_size + 0.05, 0.05)
+    else:
+        bins = 15
+    plt.hist(tile_size_data, bins=bins, alpha=0.7, rwidth=0.85, edgecolor="black")
+    plt.title("Distribution of Average Tile Sizes")
+    plt.xlabel("Average Tile Size (% of Image Area)")
+    plt.ylabel("Frequency")
+    plt.grid(axis="both", alpha=0.75)
+    plt.savefig(os.path.join(save_dir, "tile_size_histogram.png"))
+    # Save data to JSON
+    with open(os.path.join(save_dir, "segmentation_evaluation_results.json"), "w") as f:
+        json.dump(evaluation_results, f, indent=4)
+    # Final print
+    print(f"Results saved to {save_dir}")
+    print("\nSummary Statistics:")
+    print(f"Mean Tile Count: {evaluation_results['summary']['mean_tile_count']:.2f}/19")
+    print(
+        f"Mean Tile Size: {evaluation_results['summary']['mean_tile_size_percent']:.2f}% of image"
+    )
+    if show_plots:
+        plt.show()
+    else:
+        plt.close("all")

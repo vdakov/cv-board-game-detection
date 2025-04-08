@@ -52,7 +52,7 @@ def get_labeled_hexagons(
     for cls in image_classes:
         ref_dict[cls] = []
         for i in range(1, 4):
-            img = Image.open(f"{ref_img_folder}/{cls}_{i}.png").convert('RGB')
+            img = Image.open(f"{ref_img_folder}/{cls}_{i}.png").convert("RGB")
             img_np = transform(img)
 
             # interpolate to ensure same size
