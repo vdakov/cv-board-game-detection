@@ -14,6 +14,12 @@ A computer vision system that detects, segments, and classifies Catan game board
     
 5. **Board Assembly:** Using the classification data for each tile, and the segmented hexes for their relative positions, we reconstruct the board into a game state, of a format suitable for both JSON and visualization.
 
+## Quick structure overview
+
+We built a modular pipeline for each step of recognition. For each component, we have wrapped all relevant functions to be used for end-to-end processing (`pipeline.py`). The `main` function of each component runs the training and/or evaluation for said component individually.  
+
+For each component, we have a `data` folder that contains `input`/`output` folders used for training/evaluation, as well as a `models` folder for any weights/checkpoints/encodings.
+
 ## How to run
 
 As a first step, set up a virtual environment with all dependencies found on `requirements.txt`. **Make sure your Python is old enough** (e.g. Python 3.9). 
@@ -60,11 +66,11 @@ Then, we need to load all models used by the pipeline. We have already provided 
 1. Prepare training data:
    - Place your training images in `pre_processing/data/output/perspective_distorted_boards`. Alternatively, you can synthetically generate data by running the `board_mining.py` script, followed by the `perspective_warping.py` script for preprocessing the samples.
    - Ensure you have corresponding bounding box coordinates in `bbox_coordinates.json`
-2. Train the model using `homomography_training.py`. The model will be saved in `runs/models/homomography_hybrid_128_model.pth` which can be moved to the `models` folder.
+2. Train the model using `homomography_training.py`. The model will be saved in `runs/models/homomography_hybrid_128_model.pth` which can be moved to its `models` folder.
 
 ### YOLO Board Detection Model
 1. Convert training data to YOLO format using `to_yolo_format.py`.
-2. Train the model using `yolo_training.py`. The model will be saved in `board_detection/data/output/train/weights/best.pt`, which can then be moved to the `models` folder.
+2. Train the model using `yolo_training.py`. The model will be saved in `board_detection/data/output/train/weights/best.pt`, which can then be moved to its `models` folder.
 
 ### Tile Classification Model
 1. Place your training images (cropped hex tiles) in `board_piece_classification/data/input`. Ensure images are organized by class in subdirectories.
