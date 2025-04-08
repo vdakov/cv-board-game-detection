@@ -18,6 +18,8 @@ A computer vision system that detects, segments, and classifies Catan game board
 
 As a first step, set up a virtual environment with all dependencies found on `requirements.txt`. **Make sure your Python is old enough** (e.g. Python 3.9). 
 
+Option 1 - Conda:
+
 ```
 <!-- Make sure you are in the main directory. -->
 conda create -n custom-env python=3.9
@@ -26,29 +28,56 @@ conda install pip
 pip install -r requirements.txt 
 ```
 
+Option 2 - venv:
 
- Then, all models need to be downloaded and/or trained:
-- Perspective correction: train homography net.
-- Board detection: YOLO  contained in repo.
-- Board segmentation: SAM is automatically downloaded first time script is ran
-- Tile classification: train classification networks and [download Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) (Windows). For Linux, just run `sudo apt-get install tesseract-ocr
-`
-
-How to retrain the models:  TO-DO 
-
-
-The following models are already in the repository. Make sure these are there. Otherwise you have to retrain the network. 
-- Homography model: `board_detection/data/models/homomography_hybrid_128_model.pth`
-- YOLO: `board_detection/data/models/yolo_best.pt`
-- Classification CNN: `tile_detector_hexagons.keras` 
-- As mentioned, SAM is downloaded on initialization.
-- Make sure you have Tesseract and it is added to PATH. 
-
-The pretrained models go to the relevant `models` folder.
-
-Then, just run the `pipeline.py` script with an `img_path` argument for choosing an input image. Example:
+```bash
+python -m venv venv
 ```
-python3 pipeline.py --img_path "path_to_image" 
+Activate the environment:
+- Windows:
+```bash
+.\venv\Scripts\activate
+```
+- Linux/Mac:
+```bash
+source venv/bin/activate
+```
+```bash
+pip install -r requirements.txt
 ```
 
-The output, along with all intermediate steps, will be found on the `data/output` folder under the same name subfolder.
+You also need to install Tesseract OCR:
+- Windows: Download and install from [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki)
+- Linux: `sudo apt-get install tesseract-ocr`
+- Mac: `brew install tesseract`
+
+Make sure the Tesseract OCR is in PATH for the scripts to access. Afterwards, you may rerun `pip install pytesseract` to ensure proper integration.
+
+Then, we need to load all models used by the pipeline. We have already provided our best trained models for each task as part of the repo using Git LFS. Only exception is the SAM model, which will be downloaded automatically when running the scripts initially. Below we describe how one can train their own versions of the models.
+
+### Perspective Correction Model
+
+1. Prepare training data:
+   - Place your training images in `pre_processing/data/output/perspective_distorted_boards`. Alternatively, you can synthetically generate data by running the `board_mining.py` script, followed by the `perspective_warping.py` script for preprocessing the samples.
+   - Ensure you have corresponding bounding box coordinates in `bbox_coordinates.json`
+2. Train the model using `homomography_training.py`. The model will be saved in `runs/models/homomography_hybrid_128_model.pth` which can be moved to the `models` folder.
+
+### YOLO Board Detection Model
+1. Convert training data to YOLO format using `to_yolo_format.py`.
+2. Train the model using `yolo_training.py`. The model will be saved in `board_detection/data/output/train/weights/best.pt`, which can then be moved to the `models` folder.
+
+### Tile Classification Model
+1. Place your training images (cropped hex tiles) in `board_piece_classification/data/input`. Ensure images are organized by class in subdirectories.
+2. Train the classification model using `train_classifier.py`. The model will be saved in `board_piece_classification/data/models/tile_detector_hexagons.keras`, along with its encoders.
+
+## Running the Pipeline
+
+After setting up all models, you can run the full pipeline on an image using `python pipeline.py --img_path path/to/your/image.jpg`.
+
+The output will be saved in `data/output/{image_name}/` with:
+- Corrected perspective image
+- Detected board image
+- Segmented hexagons
+- Final board visualization
+- JSON representation of the board state
+
