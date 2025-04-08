@@ -162,7 +162,10 @@ def train_model(
 
     return train_losses, val_losses, best_model_state_dict
 
-def calculate_test_loss(model, test_loader, criterion, device, output_matrix_shape=(3, 3)):
+
+def calculate_test_loss(
+    model, test_loader, criterion, device, output_matrix_shape=(3, 3)
+):
     model.eval()  # Set the model to evaluation mode
     test_loss = 0.0
     running_loss = 0.0
@@ -183,15 +186,23 @@ def calculate_test_loss(model, test_loader, criterion, device, output_matrix_sha
 
             # Reshape the batch of 9-dimensional outputs into matrices
             batch_size = outputs.size(0)
-            reshaped_outputs_np = outputs.cpu().numpy().reshape(batch_size, *output_matrix_shape)
+            reshaped_outputs_np = (
+                outputs.cpu().numpy().reshape(batch_size, *output_matrix_shape)
+            )
             all_predicted_matrices.extend(reshaped_outputs_np)
 
             # Reshape the batch of 9-dimensional ground truth into matrices
-            if labels.ndim > 1 and labels.size(-1) == 9:  # Check if labels are also 9-dim vectors
-                reshaped_labels_np = labels.cpu().numpy().reshape(batch_size, *output_matrix_shape)
+            if (
+                labels.ndim > 1 and labels.size(-1) == 9
+            ):  # Check if labels are also 9-dim vectors
+                reshaped_labels_np = (
+                    labels.cpu().numpy().reshape(batch_size, *output_matrix_shape)
+                )
                 all_ground_truth_matrices.extend(reshaped_labels_np)
             else:
-                print("Warning: Ground truth labels are not 9-dimensional vectors. Skipping reshaping.")
+                print(
+                    "Warning: Ground truth labels are not 9-dimensional vectors. Skipping reshaping."
+                )
                 # You might want to handle this differently based on your actual labels
                 all_ground_truth_matrices.extend(labels.cpu().numpy())
 

@@ -197,3 +197,5 @@ runs/**
 !board_piece_classification/data/input/tile_masks/
 !board_piece_classification/data/input/tile_masks/**
 !board_piece_classification/data/input/test*
+!board_piece_classification/data/models/*
+
