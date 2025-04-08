@@ -114,7 +114,7 @@ def extract_single_image_hexagon(img, mask_generator, show_plots=False):
     centers = []
     masks = segment_all(mask_generator, img)
     cluster_img = filter_for_hexagons(img, masks, show_plots=show_plots)
-    hexagons = extract_hexagon_contours(cluster_img)
+    hexagons = extract_hexagon_contours(cluster_img, show_plots=show_plots)
 
     output = []
 

@@ -92,7 +92,7 @@ def extract_hexagons(board_image) -> list:
     )
     mask_generator = load_segment_anything(checkpoint_path, model_name)
     np_img = np.array(board_image)
-    return extract_single_image_hexagon(np_img, mask_generator, show_plots=True)
+    return extract_single_image_hexagon(np_img, mask_generator, show_plots=False)
 
 
 def classifiy_hexagons(hexagon_image_list):
@@ -243,6 +243,28 @@ if __name__ == "__main__":
         hexagon.save(os.path.join(intermediate_folder, f"hexagon_{i}.png"))
     # Classify hexagons and assemble the board
     classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
+    # classified_hexagons_with_numbers = {
+    #     0: ("brick", 8),
+    #     1: ("lumber", 10),
+    #     2: ("sheep", 4),
+    #     3: ("ore", 6),
+    #     4: ("wheat", 9),
+    #     5: ("ore", 4),
+    #     6: ("lumber", 11),
+    #     7: ("wheat", 5),
+    #     8: ("lumber", 10),
+    #     9: ("desert", None),
+    #     10: ("brick", 2),
+    #     11: ("sheep", 3),
+    #     12: ("wheat", 9),
+    #     13: ("sheep", 11),
+    #     14: ("wheat", 5),
+    #     15: ("ore", 12),
+    #     16: ("sheep", 6),
+    #     17: ("lumber", 8),
+    #     18: ("brick", 3),
+    # }
+
     # Assemble the board
     board = assemble_board(classified_hexagons_with_numbers, hex_positions)
     save_board_to_json(board, intermediate_folder)
