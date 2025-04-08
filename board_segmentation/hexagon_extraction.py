@@ -10,7 +10,7 @@ import json
 import numpy as np
 
 import torch
-from segmentation import (
+from board_segmentation.segmentation import (
     extract_hexagon_contours,
     filter_for_hexagons,
     segment_all,
@@ -125,7 +125,7 @@ def extract_single_image_hexagon(img, mask_generator, show_plots=False):
     for _, hexagon in enumerate(hexagons):
         x, y, w, h = cv2.boundingRect(hexagon)  # Get bounding box
         hex_crop = img[y : y + h, x : x + w]  # Crop the region
-        pil_crop = Image.fromarray(cv2.cvtColor(hex_crop, cv2.COLOR_BGR2RGB))
+        pil_crop = Image.fromarray(hex_crop)
         output.append(pil_crop)
 
         M = cv2.moments(hexagon)
