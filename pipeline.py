@@ -26,6 +26,8 @@ from visualization.board_visualization import (
     standard_positions,
     adjacency_map,
     visualize_board,
+    HEX_SIZE,
+    vert,
 )
 
 
@@ -127,7 +129,7 @@ def classifiy_hexagons(hexagon_image_list):
     return final_dict
 
 
-def assemble_board(classified_hexagons, hex_positions=None):
+def assemble_board(classified_hexagons, hex_positions=None, image_dimensions=None):
     """
     Assemble the board by determining the adjacency relationships between hexagons.
     This function takes the classified hexagons and creates a structured board representation
@@ -137,34 +139,105 @@ def assemble_board(classified_hexagons, hex_positions=None):
         classified_hexagons: Dictionary containing hexagon IDs ('hex_id'), their types ('hex_label'),
                              and number labels ('number_label')
         hex_positions: List of (x, y) coordinates representing the centers of each hexagon.
-                       If None, will use a predefined layout for standard Catan boards.
+        image_dimensions: Tuple of (width, height) of the input image.
 
     Returns:
         Dictionary representing the complete board with adjacency information, grid coordinates,
         and resource distribution statistics.
     """
     board = {"hexagons": {}, "board_layout": {}, "resource_distribution": {}}
-    # Create hexagons with the defined layout
-    for i in range(19):
-        if classified_hexagons.get(i) is None:
-            continue
-        hex_type, hex_number = classified_hexagons[i]
-        x, y = standard_positions[i]
-        board["hexagons"][i] = {
-            "type": hex_type,
-            "number": hex_number,
-            "position": (x, y),
-            "grid_coords": (x, y, 0),  # Using x,y as grid coords for simplicity
-            "adjacents": adjacency_map[i],  # Use predefined adjacencies
-        }
+
+    # If we have both hex positions and image dimensions, map detected tiles to standard positions
+    if hex_positions is not None and image_dimensions is not None:
+        img_width, img_height = image_dimensions
+        center_x = img_width / 2
+        center_y = img_height / 2
+        # Convert hex positions to offsets from center
+        offsets = []
+        for pos in hex_positions:
+            x, y = pos
+            offset_x = x - center_x
+            offset_y = y - center_y
+            offsets.append((offset_x, offset_y))
+        # Find the best matching tile for each detected position
+        max_std_x = max(abs(x) for x, _ in standard_positions.values())
+        max_std_y = max(abs(y) for _, y in standard_positions.values())
+        max_offset_x = max(abs(x) for x, _ in offsets)
+        max_offset_y = max(abs(y) for _, y in offsets)
+
+        scale_x = max_offset_x / max_std_x if max_std_x > 0 else 1
+        scale_y = max_offset_y / max_std_y if max_std_y > 0 else 1
+
+        position_to_id = {}
+        used_ids = set()
+
+        for i, (offset_x, offset_y) in enumerate(offsets):
+            distances = []
+            for tile_id, (std_x, std_y) in standard_positions.items():
+                scaled_std_x = std_x * scale_x
+                scaled_std_y = std_y * scale_y
+                dist = (
+                    (offset_x - scaled_std_x) ** 2 + (offset_y - scaled_std_y) ** 2
+                ) ** 0.5
+                distances.append((dist, tile_id))
+            distances.sort()
+            for dist, tile_id in distances:
+                if tile_id not in used_ids:
+                    position_to_id[i] = tile_id
+                    used_ids.add(tile_id)
+                    break
+        # First, populate with known tiles
+        for i, (offset_x, offset_y) in enumerate(offsets):
+            if i in position_to_id:
+                tile_id = position_to_id[i]
+                hex_type, hex_number = classified_hexagons[i]
+                board["hexagons"][tile_id] = {
+                    "type": hex_type,
+                    "number": hex_number,
+                    "position": standard_positions[tile_id],
+                    "grid_coords": standard_positions[tile_id]
+                    + (0,),  # Using x,y as grid coords
+                    "adjacents": adjacency_map[tile_id],
+                }
+        # Then make sure all 19 positions are filled, adding unknown for missing ones
+        for i in range(19):
+            if i not in board["hexagons"]:
+                board["hexagons"][i] = {
+                    "type": "unknown",
+                    "number": None,
+                    "position": standard_positions[i],
+                    "grid_coords": standard_positions[i] + (0,),
+                    "adjacents": adjacency_map[i],
+                }
+    else:
+        # Fallback to standard positions if we don't have enough information
+        for i in range(19):
+            if i in classified_hexagons:
+                hex_type, hex_number = classified_hexagons[i]
+                board["hexagons"][i] = {
+                    "type": hex_type,
+                    "number": hex_number,
+                    "position": standard_positions[i],
+                    "grid_coords": standard_positions[i] + (0,),
+                    "adjacents": adjacency_map[i],
+                }
+            else:
+                board["hexagons"][i] = {
+                    "type": "unknown",
+                    "number": None,
+                    "position": standard_positions[i],
+                    "grid_coords": standard_positions[i] + (0,),
+                    "adjacents": adjacency_map[i],
+                }
     # Create resource distribution counts
     resource_counts = {}
     for hex_data in board["hexagons"].values():
         resource_type = hex_data["type"]
-        if resource_type in resource_counts:
-            resource_counts[resource_type] += 1
-        else:
-            resource_counts[resource_type] = 1
+        if resource_type != "unknown":  # Don't count unknown tiles in distribution
+            if resource_type in resource_counts:
+                resource_counts[resource_type] += 1
+            else:
+                resource_counts[resource_type] = 1
     # Layout params
     board["resource_distribution"] = resource_counts
     board["board_layout"]["grid"] = None
@@ -243,6 +316,7 @@ if __name__ == "__main__":
         hexagon.save(os.path.join(intermediate_folder, f"hexagon_{i}.png"))
     # Classify hexagons and assemble the board
     classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
+
     # classified_hexagons_with_numbers = {
     #     0: ("brick", 8),
     #     1: ("lumber", 10),
@@ -264,8 +338,11 @@ if __name__ == "__main__":
     #     17: ("lumber", 8),
     #     18: ("brick", 3),
     # }
-
     # Assemble the board
-    board = assemble_board(classified_hexagons_with_numbers, hex_positions)
+    board = assemble_board(
+        classified_hexagons_with_numbers,
+        hex_positions,
+        (board_image.width, board_image.height),
+    )
     save_board_to_json(board, intermediate_folder)
     visualize_board(board)

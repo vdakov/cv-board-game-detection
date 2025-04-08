@@ -76,6 +76,7 @@ def visualize_board(board):
         "wheat": "gold",
         "ore": "dimgray",
         "desert": "khaki",
+        "unknown": "gray",
     }
     # Draw each hex
     for hex_id, hex_data in board["hexagons"].items():
@@ -137,7 +138,7 @@ def visualize_board(board):
     legend_elements = [
         patches.Patch(facecolor=color, edgecolor="black", label=r_type)
         for r_type, color in resource_colors.items()
-        if r_type in board["resource_distribution"]
+        if r_type in board["resource_distribution"] or r_type == "unknown"
     ]
     ax.legend(
         handles=legend_elements,
@@ -157,5 +158,6 @@ def visualize_board(board):
             fontsize=8,
             bbox=dict(facecolor="white", alpha=0.8),
         )
+
     plt.tight_layout()
     plt.show()
