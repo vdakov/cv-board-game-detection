@@ -73,8 +73,9 @@ Then, we need to load all models used by the pipeline. We have already provided 
 2. Train the model using `yolo_training.py`. The model will be saved in `board_detection/data/output/train/weights/best.pt`, which can then be moved to its `models` folder.
 
 ### Tile Classification Model
-1. Place your training images (cropped hex tiles) in `board_piece_classification/data/input`. Ensure images are organized by class in subdirectories.
-2. Train the classification model using `train_classifier.py`. The model will be saved in `board_piece_classification/data/models/tile_detector_hexagons.keras`, along with its encoders.
+1. Place your training images (cropped hex tiles) in `board_segmentation/data/output/mined_synthetic_tiles`. Ensure images are organized by class in subdirectories.
+2. Run the script `board_piece_classification/hexagon_classification_training.py`. A new dataset will be saved in `board_piece_classification/data/output/compiled_dataset`.
+3. Train the classification model using `train_classifier.py`. The model will be saved in `board_piece_classification/data/models/tile_detector_hexagons.keras`, along with a label encoder.
 
 ## Running the Pipeline
 
