@@ -97,7 +97,7 @@ def extract_hexagons(board_image) -> list:
     return extract_single_image_hexagon(np_img, mask_generator, show_plots=False)
 
 
-def classifiy_hexagons(hexagon_image_list):
+def classify_hexagons(hexagon_image_list):
     """
     Classify given hexagons on a board as well as the numbers inside of them.
     @:param hexagon_image_list: A list of PIL images containing segmented hexagons.
@@ -315,7 +315,15 @@ if __name__ == "__main__":
     for i, hexagon in enumerate(hexagons):
         hexagon.save(os.path.join(intermediate_folder, f"hexagon_{i}.png"))
     # Classify hexagons and assemble the board
-    classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
+    classified_hexagons_with_numbers = classify_hexagons(hexagons)
+    # Assemble the board
+    board = assemble_board(
+        classified_hexagons_with_numbers,
+        hex_positions,
+        (board_image.width, board_image.height),
+    )
+    save_board_to_json(board, intermediate_folder)
+    visualize_board(board)
 
     # classified_hexagons_with_numbers = {
     #     0: ("brick", 8),
@@ -338,11 +346,3 @@ if __name__ == "__main__":
     #     17: ("lumber", 8),
     #     18: ("brick", 3),
     # }
-    # Assemble the board
-    board = assemble_board(
-        classified_hexagons_with_numbers,
-        hex_positions,
-        (board_image.width, board_image.height),
-    )
-    save_board_to_json(board, intermediate_folder)
-    visualize_board(board)
