@@ -75,7 +75,7 @@ def get_args():
 def detect_board(image: Image, model_path: str) -> Image:
     model_yolo = YOLO(model_path)
     class_id = 0
-    bbox = board_detection_step(image, model_yolo, class_id, show_results=False)
+    bbox = board_detection_step(image, model_yolo, class_id, show_results=True)
     bbox = list(map(int, bbox))
     cropped_image = image.crop(bbox)
     return cropped_image
@@ -94,7 +94,7 @@ def extract_hexagons(board_image) -> list:
     )
     mask_generator = load_segment_anything(checkpoint_path, model_name)
     np_img = np.array(board_image)
-    return extract_single_image_hexagon(np_img, mask_generator, show_plots=False)
+    return extract_single_image_hexagon(np_img, mask_generator, show_plots=True)
 
 
 def classify_hexagons(hexagon_image_list):

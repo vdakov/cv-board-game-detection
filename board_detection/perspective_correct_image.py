@@ -1,5 +1,6 @@
 from PIL import Image
 import cv2
+from matplotlib import pyplot as plt
 from torchvision import transforms
 import numpy as np
 import torch
@@ -27,7 +28,7 @@ def get_warped_image_bounds(H, width, height):
 
 
 def perspective_correct_image(
-    input, model_checkpoint_path, model_resolution=128, path_or_img="path"
+    input, model_checkpoint_path, model_resolution=128, path_or_img="path", show_image=True,
 ):
     checkpoint = torch.load(model_checkpoint_path)
     model = HomographyNet((1, model_resolution, model_resolution))
@@ -84,4 +85,11 @@ def perspective_correct_image(
     corrected_img = cv2.warpPerspective(
         padded_img, inverse_H, (W + pad_left + pad_right, H + pad_top + pad_bottom)
     )
+
+    if show_image:
+        plt.figure(figsize=(6, 6))
+        plt.title("Perspective Corrected Image")
+        plt.imshow(corrected_img)
+        plt.axis("off")
+        plt.show()
     return Image.fromarray(corrected_img)

@@ -16,14 +16,39 @@ A computer vision system that detects, segments, and classifies Catan game board
 
 ## How to run
 
-TODO: Below is only an outline. Go into more details and rewrite some parts.
+As a first step, set up a virtual environment with all dependencies found on `requirements.txt`. **Make sure your Python is old enough** (e.g. Python 3.9). 
 
-As a first step, set up a virtual environment with all dependencies found on `requirements.txt`. Then, all models need to be downloaded and/or trained:
+```
+<!-- Make sure you are in the main directory. -->
+conda create -n custom-env python=3.9
+conda activate custom-env 
+conda install pip 
+pip install -r requirements.txt 
+```
+
+
+ Then, all models need to be downloaded and/or trained:
 - Perspective correction: train homography net.
-- Board detection: Yolo contained in repo.
+- Board detection: YOLO  contained in repo.
 - Board segmentation: SAM is automatically downloaded first time script is ran
-- Tile classification: train classification networks and [download Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki)
+- Tile classification: train classification networks and [download Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) (Windows). For Linux, just run `sudo apt-get install tesseract-ocr
+`
 
-Each one goes to the relevant `models` folder.
+How to retrain the models:  TO-DO 
 
-Then, just run the `pipeline.py` script with an `img_path` argument for choosing an input image. The output, along with all intermediate steps, will be found on the `data/output` folder under the same name subfolder.
+
+The following models are already in the repository. Make sure these are there. Otherwise you have to retrain the network. 
+- Homography model: `board_detection/data/models/homomography_hybrid_128_model.pth`
+- YOLO: `board_detection/data/models/yolo_best.pt`
+- Classification CNN: `tile_detector_hexagons.keras` 
+- As mentioned, SAM is downloaded on initialization.
+- Make sure you have Tesseract and it is added to PATH. 
+
+The pretrained models go to the relevant `models` folder.
+
+Then, just run the `pipeline.py` script with an `img_path` argument for choosing an input image. Example:
+```
+python3 pipeline.py --img_path "path_to_image" 
+```
+
+The output, along with all intermediate steps, will be found on the `data/output` folder under the same name subfolder.
