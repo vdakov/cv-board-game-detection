@@ -3,7 +3,11 @@ import numpy as np
 
 
 def show_train_test_loss(
-    training_losses, validation_loss, test_loss, num_epochs, title="Training, Validation and Test Loss Over Epochs"
+    training_losses,
+    validation_loss,
+    test_loss,
+    num_epochs,
+    title="Training, Validation and Test Loss Over Epochs",
 ):
     """
     Generates a visually appealing plot of training loss and a horizontal line for test loss.

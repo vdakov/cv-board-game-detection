@@ -39,17 +39,17 @@ def compare_prediction_ground_truth(image, prediction, label, title=None):
     )  # Create a figure with 1 row, 2 columns of subplots
 
     # Display the "before" image
-    axes[0].imshow(image, cmap='gray')
+    axes[0].imshow(image, cmap="gray")
     axes[0].set_title("Original")
     axes[0].axis("off")  # Turn off axis labels and ticks
 
     # Display the "after" image
-    axes[1].imshow(prediction, cmap='gray')
+    axes[1].imshow(prediction, cmap="gray")
     axes[1].set_title("Prediction")
     axes[1].axis("off")
 
     # Display the "after" image
-    axes[2].imshow(label, cmap='gray')
+    axes[2].imshow(label, cmap="gray")
     axes[2].set_title("Label")
     axes[2].axis("off")
 

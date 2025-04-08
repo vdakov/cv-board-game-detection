@@ -40,9 +40,7 @@ def show_bbox(results, img, class_id):
 def board_detection_step(input, model, class_id, show_results=True):
     """Runs the full detection pipeline and plots results."""
 
-
     results = search_for_object(input, model, class_id)
-
 
     if results and hasattr(results[1][0], "boxes") and len(results[1][0].boxes) > 0:
         bbox = results[1][0].boxes[0].xyxy[0].cpu().numpy()
@@ -56,12 +54,10 @@ def board_detection_step(input, model, class_id, show_results=True):
                 np.array(input),
                 img_np,
                 title_before="Before Detection",
-                title_after="After YOLO"
+                title_after="After YOLO",
             )
 
         return bbox
     else:
         print("No boxes detected!")
         return None
-
-

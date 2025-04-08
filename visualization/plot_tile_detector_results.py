@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+
 def plot_loss_accuracy(hist, save_path):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
@@ -33,22 +34,23 @@ def plot_loss_accuracy(hist, save_path):
 
     plt.close()
 
+
 def plot_roc(num_classes, fpr, tpr, roc_auc, label_encoder, save_path):
 
     for i in range(num_classes):
         plt.plot(
             fpr[i],
             tpr[i],
-            label=f'Class {label_encoder.inverse_transform([i])[0]} (AUC = {roc_auc[i]:.2f})'
+            label=f"Class {label_encoder.inverse_transform([i])[0]} (AUC = {roc_auc[i]:.2f})",
         )
 
-    plt.plot([0, 1], [0, 1], 'k--', label='Random Guessing', color='gainsboro')
+    plt.plot([0, 1], [0, 1], "k--", label="Random Guessing", color="gainsboro")
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve for Each Class')
-    plt.legend(loc='lower right')
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve for Each Class")
+    plt.legend(loc="lower right")
     plt.savefig(save_path)
 
     plt.close()

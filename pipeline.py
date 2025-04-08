@@ -11,7 +11,10 @@ from board_piece_classification.hexagon_prediction import predict_image
 from board_detection.yolo_extraction import board_detection_step
 from board_detection import perspective_correct_image
 from PIL import Image
-from board_segmentation.hexagon_extraction import extract_single_image_hexagon, load_segment_anything
+from board_segmentation.hexagon_extraction import (
+    extract_single_image_hexagon,
+    load_segment_anything,
+)
 import pytesseract
 import os
 import numpy as np
@@ -38,7 +41,7 @@ def get_args():
         "--hexagon_detector_path",
         help="Input the path to the model that detects hexagons here.",
         type=str,
-        default="board_piece_classification/data/models/tile_detector_hexagons2.keras",
+        default="board_piece_classification/data/models/tile_detector_hexagons.keras",
     )
     parser.add_argument(
         "--hexagon_label_encoder_path",
@@ -50,41 +53,50 @@ def get_args():
         "--output_path",
         help="Path to save the assembled board JSON file.",
         type=str,
-        default="data/board.json",
+        default="data/output",
     )
     parser.add_argument(
         "--homography_model_path",
         help="Path to the homography model for perspective correction.",
         type=str,
-        default="runs/models/homomography_hybrid_128_model.pth",
+        default="board_detection/data/models/homomography_hybrid_128_model.pth",
     )
     parser.add_argument(
         "--yolo_model_path",
         help="Path to the YOLO object detector to be used.",
         type=str,
-        default="board_detection/data/output/train4/weights/best.pt"  ,
+        default="board_detection/data/models/yolo_best.pt",
     )
     return parser.parse_args()
 
 
 def detect_board(image: Image, model_path: str) -> Image:
     model_yolo = YOLO(model_path)
-    class_id = 0  
-    return board_detection_step(image, model_yolo, class_id)
+    class_id = 0
+    bbox = board_detection_step(image, model_yolo, class_id, show_results=False)
+    bbox = list(map(int, bbox))
+    cropped_image = image.crop(bbox)
+    return cropped_image
 
-def perspective_correction(img_path:str, model_checkpoint_path: str) -> Image:    
-    return perspective_correct_image.perspective_correct_image(img_path, model_checkpoint_path, model_resolution=128, path_or_img="path")
+
+def perspective_correction(img_path: str, model_checkpoint_path: str) -> Image:
+    return perspective_correct_image.perspective_correct_image(
+        img_path, model_checkpoint_path, model_resolution=128, path_or_img="path"
+    )
 
 
-def extract_hexagons(board_image)-> list:
-    checkpoint_path, model_name = "board_segmentation/models/sam_vit_b_01ec64.pth", "vit_b"
+def extract_hexagons(board_image) -> list:
+    checkpoint_path, model_name = (
+        "board_segmentation/data/models/sam_vit_b_01ec64.pth",
+        "vit_b",
+    )
     mask_generator = load_segment_anything(checkpoint_path, model_name)
     np_img = np.array(board_image)
-    return extract_single_image_hexagon(np_img, mask_generator, show_plots=True)
+    return extract_single_image_hexagon(np_img, mask_generator, show_plots=False)
 
 
 def classifiy_hexagons(hexagon_image_list):
-    """ "
+    """
     Classify given hexagons on a board as well as the numbers inside of them.
     @:param hexagon_image_list: A list of PIL images containing segmented hexagons.
     @:return A dictionary containing the hexagon ids, the tile label and the number label
@@ -102,19 +114,14 @@ def classifiy_hexagons(hexagon_image_list):
     with open(args.hexagon_label_encoder_path, "rb") as f:
         label_encoder = pickle.load(f)
 
-    final_dict = {"hex_id": [], "hex_label": [], "number_label": []}
+    final_dict = {}
 
-    hex_id = 1
+    hex_id = 0
     for img in hexagon_image_list:
-
         pred_hex_label, pred_number_label = predict_image(
             img, model, label_encoder, IMG_SIZE
         )
-
-        final_dict["hex_id"].append(hex_id)
-        final_dict["hex_label"].append(pred_hex_label)
-        final_dict["number_label"].append(pred_number_label)
-
+        final_dict[hex_id] = (pred_hex_label[0], pred_number_label)
         hex_id += 1
 
     return final_dict
@@ -136,27 +143,19 @@ def assemble_board(classified_hexagons, hex_positions=None):
         Dictionary representing the complete board with adjacency information, grid coordinates,
         and resource distribution statistics.
     """
-    # Guard
-    if not classified_hexagons or "hex_id" not in classified_hexagons:
-        raise ValueError("classified_hexagons must contain a 'hex_id' key")
-    num_hexes = len(classified_hexagons["hex_id"])
-    if num_hexes != 19:
-        print(f"Warning: Expected 19 hexagons, not {num_hexes}")
-
     board = {"hexagons": {}, "board_layout": {}, "resource_distribution": {}}
     # Create hexagons with the defined layout
-    for i in range(min(num_hexes, 19)):
-        hex_id = classified_hexagons["hex_id"][i]
-        hex_type = classified_hexagons["hex_label"][i]
-        hex_number = classified_hexagons["number_label"][i]
-        x, y = standard_positions[hex_id]
-        board["hexagons"][hex_id] = {
-            "id": hex_id,
+    for i in range(19):
+        if classified_hexagons.get(i) is None:
+            continue
+        hex_type, hex_number = classified_hexagons[i]
+        x, y = standard_positions[i]
+        board["hexagons"][i] = {
             "type": hex_type,
             "number": hex_number,
             "position": (x, y),
             "grid_coords": (x, y, 0),  # Using x,y as grid coords for simplicity
-            "adjacents": adjacency_map[hex_id],  # Use predefined adjacencies
+            "adjacents": adjacency_map[i],  # Use predefined adjacencies
         }
     # Create resource distribution counts
     resource_counts = {}
@@ -186,7 +185,6 @@ def save_board_to_json(board, output_path):
         board: The board dictionary created by assemble_board
         output_path: Path where the JSON file should be saved
     """
-    # Create the output directory if it doesn't exist
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     # Convert numpy arrays to lists for JSON serialization
@@ -204,61 +202,70 @@ def save_board_to_json(board, output_path):
         else:
             return obj
 
-    # Convert the board to a JSON-serializable format
     json_board = convert_for_json(board)
-
-    # Save to file
     try:
-        with open(output_path, "w") as f:
+        output_path_file = os.path.join(output_path, "board.json")
+        with open(output_path_file, "w") as f:
             json.dump(json_board, f, indent=2)
-        print(f"Board saved to {output_path}")
+        print(f"Board saved to {output_path_file}")
     except Exception as e:
         print(f"Error saving board to JSON: {e}")
 
 
 if __name__ == "__main__":
+    # CUDA verification
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    if torch.cuda.is_available():
+        print(f"CUDA device count: {torch.cuda.device_count()}")
+        print(f"CUDA device name: {torch.cuda.get_device_name(0)}")
+        print(f"CUDA version: {torch.version.cuda}")
+
     args = get_args()
     IMG_PATH = args.img_path
     HOMOGRAPHY_MODEL_CHECKPOINT_PATH = args.homography_model_path
     YOLO_MODEL_CHECKPOINT_PATH = args.yolo_model_path
     output_path = args.output_path
-    
-
-    # Process the board image
+    # Create a folder for intermediate steps, named after the image name
+    image_name = os.path.splitext(os.path.basename(IMG_PATH))[0]
+    intermediate_folder = os.path.join(output_path, image_name)
+    os.makedirs(intermediate_folder, exist_ok=True)
+    # Detect the board
     board_image = perspective_correction(IMG_PATH, HOMOGRAPHY_MODEL_CHECKPOINT_PATH)
-    board_image = detect_board(board_image)
+    board_image.save(os.path.join(intermediate_folder, "corrected_board.png"))
+    # Segment the board
+    board_image = detect_board(board_image, YOLO_MODEL_CHECKPOINT_PATH)
+    board_image.save(os.path.join(intermediate_folder, "detected_board.png"))
     hexagons, hex_positions = extract_hexagons(board_image)
-
-
+    # Save the segmented hexagons
+    for i, hexagon in enumerate(hexagons):
+        hexagon.save(os.path.join(intermediate_folder, f"hexagon_{i}.png"))
     # Classify hexagons and assemble the board
     classified_hexagons_with_numbers = classifiy_hexagons(hexagons)
-
     # classified_hexagons_with_numbers = {
-    #     "hex_id": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
-    #     "hex_label": [
-    #         "wheat",
-    #         "sheep",
-    #         "lumber",
-    #         "wheat",
-    #         "desert",
-    #         "wheat",
-    #         "lumber",
-    #         "wheat",
-    #         "brick",
-    #         "brick",
-    #         "sheep",
-    #         "ore",
-    #         "sheep",
-    #         "lumber",
-    #         "sheep",
-    #         "ore",
-    #         "brick",
-    #         "ore",
-    #         "lumber",
-    #     ],
-    #     "number_label": [12, 3, 2, 10, 0, 5, 6, 11, 5, 11, 8, 10, 4, 8, 9, 3, 9, 6, 4],
+    #     0: ("brick", 8),
+    #     1: ("lumber", 10),
+    #     2: ("sheep", 4),
+    #     3: ("ore", 6),
+    #     4: ("wheat", 9),
+    #     5: ("ore", 4),
+    #     6: ("lumber", 11),
+    #     7: ("wheat", 5),
+    #     8: ("lumber", 10),
+    #     9: ("desert", None),
+    #     10: ("brick", 2),
+    #     11: ("sheep", 3),
+    #     12: ("wheat", 9),
+    #     13: ("sheep", 11),
+    #     14: ("wheat", 5),
+    #     15: ("ore", 12),
+    #     16: ("sheep", 6),
+    #     17: ("lumber", 8),
+    #     18: ("brick", 3),
     # }
 
+    # Assemble the board
     board = assemble_board(classified_hexagons_with_numbers, hex_positions)
-    save_board_to_json(board, output_path)
+    save_board_to_json(board, intermediate_folder)
     visualize_board(board)

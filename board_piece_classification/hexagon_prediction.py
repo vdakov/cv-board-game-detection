@@ -51,7 +51,7 @@ def predict_number(img):
 
     number = [int(s) for s in re.findall(r"\b\d+\b", text)]
 
-    return str(number[0]) if len(number) > 0 else '0'
+    return str(number[0]) if len(number) > 0 else "0"
 
 
 def predict_image(img, models, label_encoder, IMG_SIZE):
@@ -67,7 +67,9 @@ if __name__ == "__main__":
     # Attempt to predict the tile and number of a few sample tiles generated synthetically
     model_path = "data/models/tile_detector_hexagons.keras"
     img_folder_path = "../data/sample/mined_synthetic_tiles_sample"
-    label_encoder_path = "data/output/compiled_dataset/label_encoder/label_encoder_hexagons.pkl"
+    label_encoder_path = (
+        "data/output/compiled_dataset/label_encoder/label_encoder_hexagons.pkl"
+    )
     IMG_SIZE = (100, 100, 3)
 
     model = keras.models.load_model(model_path)
@@ -77,10 +79,8 @@ if __name__ == "__main__":
     for i in range(0, 19):
         img_path = f"{img_folder_path}/hexagon_{i}.png"
 
-        img = Image.open(img_path).convert('RGB')
+        img = Image.open(img_path).convert("RGB")
 
-        hex_label, number_label = predict_image(
-            img, model, label_encoder, IMG_SIZE
-        )
+        hex_label, number_label = predict_image(img, model, label_encoder, IMG_SIZE)
 
         print(f"Hex at path {img_path} is of type {hex_label} - {number_label}")

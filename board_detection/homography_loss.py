@@ -30,11 +30,8 @@ class PhotometricLoss(nn.Module):
         H_pred_inv = torch.linalg.pinv(H_pred)
         H_true_inv = torch.linalg.pinv(H_true)
 
-
         if torch.isnan(H_pred_inv).any() or torch.isinf(H_pred_inv).any():
             print("Warning: NaN or Inf detected in H_pred_inv")
-            
-
 
         def build_perspective_grid(H_inv, height, width):
             """

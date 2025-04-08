@@ -7,12 +7,10 @@ from board_detection.homomography_network import HomographyNet
 
 
 def get_warped_image_bounds(H, width, height):
-    corners = np.array([
-        [0, 0],
-        [width - 1, 0],
-        [width - 1, height - 1],
-        [0, height - 1]
-    ], dtype='float32')
+    corners = np.array(
+        [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]],
+        dtype="float32",
+    )
 
     corners = np.concatenate([corners, np.ones((4, 1))], axis=1)
     warped_corners = (H @ corners.T).T
@@ -28,33 +26,34 @@ def get_warped_image_bounds(H, width, height):
     return min_x, min_y, max_x, max_y
 
 
-
-def perspective_correct_image(input, model_checkpoint_path, model_resolution = 128, path_or_img="path"):
+def perspective_correct_image(
+    input, model_checkpoint_path, model_resolution=128, path_or_img="path"
+):
     checkpoint = torch.load(model_checkpoint_path)
     model = HomographyNet((1, model_resolution, model_resolution))
     model.load_state_dict(checkpoint["best_model_state_dict"])
 
     # Define the transform pipeline
-    input_transform_pipeline = transforms.Compose([
-        transforms.Resize((model_resolution, model_resolution)),
-        transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
-        transforms.ToTensor()
-    ]) 
-    
+    input_transform_pipeline = transforms.Compose(
+        [
+            transforms.Resize((model_resolution, model_resolution)),
+            transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+            transforms.ToTensor(),
+        ]
+    )
+
     if path_or_img == "path":
-    # Load the image using PIL
+        # Load the image using PIL
         img = Image.open(input).convert("RGB")
     elif path_or_img == "img":
-        img = input # Assuming PIL image as input
-        
-    H, W= img.size  # Use .size to get width and height
+        img = input  # Assuming PIL image as input
+
+    H, W = img.size  # Use .size to get width and height
 
     s_x = model_resolution / W
     s_y = model_resolution / H
-    S = np.array([[s_x, 0, 0],
-        [0, s_y, 0],
-        [0, 0, 1]])
-    
+    S = np.array([[s_x, 0, 0], [0, s_y, 0], [0, 0, 1]])
+
     transformed_image = input_transform_pipeline(img)
     transformed_image = transformed_image.unsqueeze(0)
 
@@ -73,8 +72,16 @@ def perspective_correct_image(input, model_checkpoint_path, model_resolution = 1
 
     # Pad the image
     padded_img = cv2.copyMakeBorder(
-        img_np, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT, value=[0, 0, 0]
+        img_np,
+        pad_top,
+        pad_bottom,
+        pad_left,
+        pad_right,
+        cv2.BORDER_CONSTANT,
+        value=[0, 0, 0],
     )
 
-    corrected_img = cv2.warpPerspective(padded_img, inverse_H, (W + pad_left + pad_right, H + pad_top + pad_bottom))
+    corrected_img = cv2.warpPerspective(
+        padded_img, inverse_H, (W + pad_left + pad_right, H + pad_top + pad_bottom)
+    )
     return Image.fromarray(corrected_img)

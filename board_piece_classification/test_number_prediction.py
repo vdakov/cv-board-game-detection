@@ -2,9 +2,16 @@ from hexagon_prediction import predict_number
 import pickle
 import tensorflow as tf
 from visualization.plot_tile_detector_results import plot_roc
-from sklearn.metrics import accuracy_score, roc_auc_score, average_precision_score, roc_curve, auc
+from sklearn.metrics import (
+    accuracy_score,
+    roc_auc_score,
+    average_precision_score,
+    roc_curve,
+    auc,
+)
 import json
 from keras import utils
+
 
 def test_number_prediction(x_test, y_test, first_n, num_classes, label_encoder):
 
@@ -37,11 +44,13 @@ def test_number_prediction(x_test, y_test, first_n, num_classes, label_encoder):
     return acc, auc_score, map_score, fpr, tpr, roc_auc
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dataset_path = "data/output/compiled_dataset/synthetic_dataset_numbers.pkl"
     image_folder = "data/output/generated_synthetic_tiles_expanded"
     tesseract_result_save_path = "data/output/number_detector_test_results.txt"
-    label_encoder_path = "data/output/compiled_dataset/label_encoder/label_encoder_numbers.pkl"
+    label_encoder_path = (
+        "data/output/compiled_dataset/label_encoder/label_encoder_numbers.pkl"
+    )
     roc_curve_save_path = "data/output/number_detector_roc_curve.png"
     no_samples_to_predict = 1000
     num_classes = 11
@@ -58,17 +67,10 @@ if __name__ == '__main__':
     y = tf.convert_to_tensor(y, dtype=tf.int32)
 
     acc, auc_score, map_score, fpr, tpr, roc_auc = test_number_prediction(
-            X,
-            y,
-            no_samples_to_predict,
-            num_classes,
-            label_encoder)
+        X, y, no_samples_to_predict, num_classes, label_encoder
+    )
 
-    result_dict = {
-        'test_acc': acc,
-        'test_auc': auc_score,
-        'test_map': map_score
-    }
+    result_dict = {"test_acc": acc, "test_auc": auc_score, "test_map": map_score}
 
     with open(tesseract_result_save_path, "w") as file:
         json.dump(result_dict, file)
